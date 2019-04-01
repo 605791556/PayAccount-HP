@@ -1,0 +1,220 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{BB4C4693-C06E-42B8-ADCE-33932B57FBBE}</ProjectGuid>
+    <RootNamespace>PayAccount</RootNamespace>
+    <Keyword>MFCProj</Keyword>
+    <ProjectName>PayAccount-HP</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v100</PlatformToolset>
+    <UseOfMfc>Static</UseOfMfc>
+    <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v100</PlatformToolset>
+    <UseOfMfc>Static</UseOfMfc>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>12.0.21005.1</_ProjectFileVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
+    <IntDir>$(Configuration)\</IntDir>
+    <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
+    <IntDir>$(Configuration)\</IntDir>
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Midl>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MkTypLibCompatible>false</MkTypLibCompatible>
+      <ValidateAllParameters>true</ValidateAllParameters>
+    </Midl>
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <AdditionalIncludeDirectories>$(SolutidonDir)common;$(ProjectDir)jsonCpp\include;$(SolutionDir)HP-Socket\Global;$(SolutionDir)HP-Socket\Src;$(SolutionDir)HP-Socket\Common\Src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Culture>0x0804</Culture>
+      <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(ProjectDir)/lib;$(ProjectDir)jsonCpp\lib;$(SolutionDir)HP-Socket\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Midl>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MkTypLibCompatible>false</MkTypLibCompatible>
+      <ValidateAllParameters>true</ValidateAllParameters>
+    </Midl>
+    <ClCompile>
+      <Optimization>MaxSpeed</Optimization>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>false</MinimalRebuild>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <AdditionalIncludeDirectories>$(SolutidonDir)common;$(ProjectDir)jsonCpp\include;$(SolutionDir)HP-Socket\Global;$(SolutionDir)HP-Socket\Src;$(SolutionDir)HP-Socket\Common\Src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Culture>0x0804</Culture>
+      <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <TargetMachine>MachineX86</TargetMachine>
+      <AdditionalLibraryDirectories>$(ProjectDir)/lib;$(ProjectDir)jsonCpp\lib;$(SolutionDir)HP-Socket\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\common\common.cpp" />
+    <ClCompile Include="..\common\EditSet.cpp" />
+    <ClCompile Include="..\common\globle.cpp" />
+    <ClCompile Include="..\HP-Socket\Global\helper.cpp" />
+    <ClCompile Include="AddBookDlg.cpp" />
+    <ClCompile Include="AddProDlg.cpp" />
+    <ClCompile Include="AddStaffDlg.cpp" />
+    <ClCompile Include="AddUserDlg.cpp" />
+    <ClCompile Include="BookMngDlg.cpp" />
+    <ClCompile Include="DaiNumberPayDlg.cpp" />
+    <ClCompile Include="Detail_ListCtrl.cpp" />
+    <ClCompile Include="DianYePayDlg.cpp" />
+    <ClCompile Include="LockDlg.cpp" />
+    <ClCompile Include="LoginDlg.cpp" />
+    <ClCompile Include="MdfPwdDlg.cpp" />
+    <ClCompile Include="MyListCtrl.cpp" />
+    <ClCompile Include="OtherProDlg.cpp" />
+    <ClCompile Include="OtherProListCtrl.cpp" />
+    <ClCompile Include="PayAccount.cpp" />
+    <ClCompile Include="PayAccountDlg.cpp" />
+    <ClCompile Include="MonthCheckDlg.cpp" />
+    <ClCompile Include="DetailDlg.cpp" />
+    <ClCompile Include="ProjectMngDlg.cpp" />
+    <ClCompile Include="ProMngListCtrl.cpp" />
+    <ClCompile Include="SetAdressDlg.cpp" />
+    <ClCompile Include="SetPayDlg.cpp" />
+    <ClCompile Include="StaffMngDlg.cpp" />
+    <ClCompile Include="StaffWriteDlg.cpp" />
+    <ClCompile Include="stdafx.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="Test.cpp" />
+    <ClCompile Include="UserMngDlg.cpp" />
+    <ClCompile Include="DayCheckDlg.cpp" />
+    <ClCompile Include="ProcessDlg.cpp" />
+    <ClCompile Include="WorkCalDlg.cpp" />
+    <ClCompile Include="ZheYeDlg.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\common\common.h" />
+    <ClInclude Include="..\common\EditSet.h" />
+    <ClInclude Include="..\common\globle.h" />
+    <ClInclude Include="..\common\Status.h" />
+    <ClInclude Include="..\HP-Socket\Common\Src\GeneralHelper.h" />
+    <ClInclude Include="..\HP-Socket\Global\helper.h" />
+    <ClInclude Include="AddBookDlg.h" />
+    <ClInclude Include="AddProDlg.h" />
+    <ClInclude Include="AddStaffDlg.h" />
+    <ClInclude Include="AddUserDlg.h" />
+    <ClInclude Include="BookMngDlg.h" />
+    <ClInclude Include="DaiNumberPayDlg.h" />
+    <ClInclude Include="Detail_ListCtrl.h" />
+    <ClInclude Include="DianYePayDlg.h" />
+    <ClInclude Include="LockDlg.h" />
+    <ClInclude Include="LoginDlg.h" />
+    <ClInclude Include="MdfPwdDlg.h" />
+    <ClInclude Include="MyListCtrl.h" />
+    <ClInclude Include="OtherProDlg.h" />
+    <ClInclude Include="OtherProListCtrl.h" />
+    <ClInclude Include="PayAccount.h" />
+    <ClInclude Include="PayAccountDlg.h" />
+    <ClInclude Include="MonthCheckDlg.h" />
+    <ClInclude Include="DetailDlg.h" />
+    <ClInclude Include="ProjectMngDlg.h" />
+    <ClInclude Include="ProMngListCtrl.h" />
+    <ClInclude Include="SetAdressDlg.h" />
+    <ClInclude Include="SetPayDlg.h" />
+    <ClInclude Include="Resource.h" />
+    <ClInclude Include="StaffMngDlg.h" />
+    <ClInclude Include="StaffWriteDlg.h" />
+    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="targetver.h" />
+    <ClInclude Include="Test.h" />
+    <ClInclude Include="UserMngDlg.h" />
+    <ClInclude Include="DayCheckDlg.h" />
+    <ClInclude Include="ProcessDlg.h" />
+    <ClInclude Include="WorkCalDlg.h" />
+    <ClInclude Include="ZheYeDlg.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="res\PayAccount.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="PayAccount.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="res\PayAccount.rc2" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="ReadMe.txt" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+  <ProjectExtensions>
+    <VisualStudio>
+      <UserProperties RESOURCE_FILE="PayAccount.rc" />
+    </VisualStudio>
+  </ProjectExtensions>
+</Project>

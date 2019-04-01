@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PayAccount", "PayAccount\PayAccount.vcxproj", "{BB4C4693-C06E-42B8-ADCE-33932B57FBBE}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PayServer", "PayServer\PayServer.vcxproj", "{842573F6-C2AD-445B-8380-CD659E9E72E3}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{BB4C4693-C06E-42B8-ADCE-33932B57FBBE}.Debug|Win32.ActiveCfg = Debug|Win32
+		{BB4C4693-C06E-42B8-ADCE-33932B57FBBE}.Debug|Win32.Build.0 = Debug|Win32
+		{BB4C4693-C06E-42B8-ADCE-33932B57FBBE}.Release|Win32.ActiveCfg = Release|Win32
+		{BB4C4693-C06E-42B8-ADCE-33932B57FBBE}.Release|Win32.Build.0 = Release|Win32
+		{842573F6-C2AD-445B-8380-CD659E9E72E3}.Debug|Win32.ActiveCfg = Debug|Win32
+		{842573F6-C2AD-445B-8380-CD659E9E72E3}.Debug|Win32.Build.0 = Debug|Win32
+		{842573F6-C2AD-445B-8380-CD659E9E72E3}.Release|Win32.ActiveCfg = Release|Win32
+		{842573F6-C2AD-445B-8380-CD659E9E72E3}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
