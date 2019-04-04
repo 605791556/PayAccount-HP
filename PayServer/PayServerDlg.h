@@ -11,8 +11,7 @@
 
 using std::string;
 
-#define WM_SOCKMSG   WM_USER+1
-#define WM_SHOWTASK (WM_USER + 2)
+#define WM_SHOWTASK (WM_USER + 1)
 
 enum SOCK_MSG
 {
@@ -34,7 +33,7 @@ class CPayServerDlg : public CDialogEx, public CTcpPullServerListener
 // 构造
 public:
 	CPayServerDlg(CWnd* pParent = NULL);	// 标准构造函数
-
+	~CPayServerDlg();
 // 对话框数据
 	enum { IDD = IDD_PAYSERVER_DIALOG };
 
@@ -75,20 +74,21 @@ public:
 	void InitListCtrl();
 	void InitChechBox();
 	void Hide();
+	void KillDog();
+	BOOL RunDog();
 
-private:
+public:
 	CTcpPullServerPtr m_Server;
 
 public:
 	NOTIFYICONDATA m_nid;
-	HANDLE   m_SocketHandle;
-	BOOL     m_bExit;
 	afx_msg void OnDestroy();
 	CListBox m_ListBox;
 	CListCtrl m_listCtrl;
 	CStatic m_staIP;
 	HANDLE m_mutex;
-	HANDLE m_sendMutex;
+	HANDLE m_hSetStart;
+	BOOL   m_bExit;
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
 	afx_msg void OnBnClickedBtnHide();
 	CButton m_ckRun;

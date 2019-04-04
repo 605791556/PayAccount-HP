@@ -7,7 +7,12 @@
 #include "PayServerDlg.h"
 #include "afxdialogex.h"
 #include "..\common\common.h"
+#include <tlhelp32.h>
+#include <shlwapi.h>
+#include <DbgHelp.h>
 
+#pragma comment(lib, "Dbghelp.lib")
+#pragma comment(lib,"Shlwapi.lib")
 #pragma comment(lib,"HPSocket_U.lib")
 
 #ifdef _DEBUG
@@ -47,14 +52,20 @@ END_MESSAGE_MAP()
 
 
 // CPayServerDlg 对话框
+LONG WINAPI MyUnhandledExceptionFilter(struct _EXCEPTION_POINTERS *pExceptionPointers);
 CPayServerDlg::CPayServerDlg(CWnd* pParent /*=NULL*/)
 	: CDialogEx(CPayServerDlg::IDD, pParent), m_Server(this)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
-	m_SocketHandle=INVALID_HANDLE_VALUE;
-	m_bExit = FALSE;
 	m_mutex = CreateMutex(NULL, FALSE, NULL);
-	m_sendMutex=CreateMutex(NULL, FALSE, NULL);
+	m_hSetStart = INVALID_HANDLE_VALUE;
+	m_bExit = false;
+	SetUnhandledExceptionFilter(MyUnhandledExceptionFilter);
+}
+
+CPayServerDlg::~CPayServerDlg()
+{
+	
 }
 
 void CPayServerDlg::DoDataExchange(CDataExchange* pDX)
@@ -71,7 +82,6 @@ BEGIN_MESSAGE_MAP(CPayServerDlg, CDialogEx)
 	ON_WM_SYSCOMMAND()
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
-	ON_MESSAGE(WM_SOCKMSG, &CPayServerDlg::OnSockMsg)
 	ON_MESSAGE(WM_SHOWTASK, &CPayServerDlg::OnShowTask)
 	ON_COMMAND(ID_S_SHOW, OnShow)
 	ON_COMMAND(ID_S_CLOSE, OnClose)
@@ -82,7 +92,63 @@ BEGIN_MESSAGE_MAP(CPayServerDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_CK_STARTRUN, &CPayServerDlg::OnBnClickedCkStartrun)
 END_MESSAGE_MAP()
 
+DWORD WINAPI StartSerThread(LPVOID lparam)
+{
+	USES_CONVERSION;
+	CPayServerDlg* pData = (CPayServerDlg*)lparam;
+	int bOk = false;
+	while (!bOk && !pData->m_bExit)
+	{
+		bOk = pData->m_Server->Start(A2W(g_Globle.m_LocalIP.c_str()), g_Globle.m_TcpPort);
+		if(bOk)
+		{
+			pData->RunDog();
+			::LogServerStart(A2W(g_Globle.m_LocalIP.c_str()), g_Globle.m_TcpPort);
+			break;
+		}
+		else
+		{
+			::LogServerStartFail(pData->m_Server->GetLastError(), pData->m_Server->GetLastErrorDesc());
+			Sleep(2000);
+		}
+	}
+	return 0;
+}
 
+LONG WINAPI MyUnhandledExceptionFilter(struct _EXCEPTION_POINTERS *pExceptionPointers)
+{
+	SYSTEMTIME t;
+	::GetLocalTime(&t);
+
+	CString strDump,strPath;
+	int nPos;
+	GetModuleFileName(NULL, strPath.GetBufferSetLength(MAX_PATH + 1), MAX_PATH);
+	strPath.ReleaseBuffer();
+	nPos = strPath.ReverseFind(_T('\\'));
+	strPath = strPath.Left(nPos);
+	strDump.Format(L"%s\\dump\\%02dH%02dM%02dS%02dMS.dmp",strPath,t.wHour,t.wMinute,t.wSecond,t.wMilliseconds);
+
+	USES_CONVERSION;
+	HANDLE hFile = CreateFileA(T2A(strDump),GENERIC_READ | GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL ); 
+	MINIDUMP_EXCEPTION_INFORMATION eInfo;
+	eInfo.ThreadId = GetCurrentThreadId(); //把需要的信息添进去
+	eInfo.ExceptionPointers = pExceptionPointers;
+	eInfo.ClientPointers = FALSE;
+
+	// 调用, 生成Dump. 98不支持
+	// Dump的类型是小型的, 节省空间. 可以参考MSDN生成更详细的Dump.
+	MiniDumpWriteDump(
+		GetCurrentProcess(),
+		GetCurrentProcessId(),
+		hFile,
+		MiniDumpNormal,
+		&eInfo,
+		NULL,
+		NULL);
+	CloseHandle(hFile);
+	return 0;
+
+}
 // CPayServerDlg 消息处理程序
 BOOL CPayServerDlg::OnInitDialog()
 {
@@ -115,6 +181,8 @@ BOOL CPayServerDlg::OnInitDialog()
 
 	// TODO: 在此添加额外的初始化代码
 	USES_CONVERSION;
+	//如果后台有看门狗程序，则先关闭
+	KillDog();
 	::SetMainWnd(this);
 	::SetInfoList(&m_ListBox);
 	g_PaySerDlg=this;
@@ -130,11 +198,13 @@ BOOL CPayServerDlg::OnInitDialog()
 
 		if(m_Server->Start(A2W(g_Globle.m_LocalIP.c_str()), g_Globle.m_TcpPort))
 		{
+			RunDog();
 			::LogServerStart(A2W(g_Globle.m_LocalIP.c_str()), g_Globle.m_TcpPort);
 		}
 		else
 		{
 			::LogServerStartFail(m_Server->GetLastError(), m_Server->GetLastErrorDesc());
+			m_hSetStart = CreateThread(NULL,0,StartSerThread,this,0,NULL);
 		}
 		//开始定时刷新客户端列表
 		SetTimer(1,2000,NULL);
@@ -238,6 +308,64 @@ void CPayServerDlg::Hide()
 //  来绘制该图标。对于使用文档/视图模型的 MFC 应用程序，
 //  这将由框架自动完成。
 
+void CPayServerDlg::KillDog()
+{
+	HANDLE hProcessSnap = CreateToolhelp32Snapshot( TH32CS_SNAPPROCESS, 0 );
+	PROCESSENTRY32 pe32;
+	HANDLE hProcess;
+	char *kill[]={"HoldDog.exe","HoldDog"};
+	static int times=0;
+
+	pe32.dwSize = sizeof( PROCESSENTRY32 );
+	Process32First( hProcessSnap, &pe32);
+
+	do
+	{
+		TCHAR data[512]=TEXT("NULL");
+		_tprintf(TEXT("ID: %5d\tname: %s\n"),pe32.th32ProcessID,pe32.szExeFile);
+
+		{
+			char ch[512]={0};
+			WideCharToMultiByte( CP_ACP, 0, pe32.szExeFile, wcslen(pe32.szExeFile),ch,512 , NULL, NULL );
+			int k=sizeof(kill)/sizeof(char*);
+			for(int i=0;i<sizeof(kill)/sizeof(char*);i++)
+			{
+				if(strstr(ch,kill[i]))
+				{
+					hProcess = OpenProcess(  PROCESS_QUERY_INFORMATION|PROCESS_VM_READ|PROCESS_TERMINATE, FALSE, pe32.th32ProcessID );
+					TerminateProcess( hProcess, 0 );
+				}
+			}
+		}
+	} while( Process32Next( hProcessSnap, &pe32 ) );
+	CloseHandle (hProcessSnap); 
+}
+
+BOOL CPayServerDlg::RunDog()
+{
+	CString str,strPath;
+	int nPos;
+	GetModuleFileName(NULL, strPath.GetBufferSetLength(MAX_PATH + 1), MAX_PATH);
+	strPath.ReleaseBuffer();
+	nPos = strPath.ReverseFind(_T('\\'));
+	strPath = strPath.Left(nPos);
+
+
+	CString dogPathName = strPath+L"\\HoldDog.exe";
+	if (!PathFileExists(dogPathName))
+	{
+		str.Format(L"看门狗程序启动失败：%s",dogPathName);
+		AddString(str);
+		return FALSE;
+	}
+	else
+	{
+		ShellExecute(NULL,L"open",dogPathName,NULL,strPath,SW_SHOWNORMAL);
+		AddString(L"看门狗程序启动成功");
+	}
+	return TRUE;
+}
+
 void CPayServerDlg::OnPaint()
 {
 	if (IsIconic())
@@ -268,44 +396,6 @@ void CPayServerDlg::OnPaint()
 HCURSOR CPayServerDlg::OnQueryDragIcon()
 {
 	return static_cast<HCURSOR>(m_hIcon);
-}
-
-LRESULT CPayServerDlg::OnSockMsg(WPARAM wParam, LPARAM lParam)
-{
-	switch (lParam)
-	{
-	case SOCK_MSG_OK:
-		{
-			AddString(L"服务启动成功，等待用户连接...");
-			break;
-		}
-	case SOCK_ERROR_CREATESOCK:
-		{
-			AddString(L"服务启动失败:create socket error!");
-			break;
-		}
-	case SOCK_ERROR_BIND:
-		{
-			AddString(L"服务启动失败:socket bind error!");
-			break;
-		}
-	case SOCK_ERROR_CREATEEVENT:
-		{
-			AddString(L"服务启动失败:create event error!");
-			break;
-		}
-	case SOCK_MSG_CLOSE:
-		{
-			AddString(L"服务已经关闭");
-			break;
-		}
-	case SOCK_MSG_TIMEOUT:
-		{
-
-			break;
-		}
-	}
-	return TRUE;
 }
 
 LRESULT CPayServerDlg::OnShowTask(WPARAM wParam, LPARAM lParam)
@@ -340,7 +430,7 @@ void CPayServerDlg::AddString(CString str)
 	SYSTEMTIME st;
 	GetLocalTime(&st);
 	strTime.Format(L"%4d/%02d/%02d %02d:%02d:%02d",st.wYear,st.wMonth,st.wDay,st.wHour,st.wMinute,st.wSecond);
-	str2.Format(L"%s：  %s",strTime, str);
+	str2.Format(L"%s  %s",strTime, str);
 	m_ListBox.AddString(str2);
 }
 
@@ -363,19 +453,6 @@ void CPayServerDlg::DoRun(string strData,Json::Value& js,TPkgInfo* pInfo)
 		{
 		case SOCK_CMD_HEART:
 			{
-				CString strHdTime;
-				SYSTEMTIME st;
-				GetLocalTime(&st);
-				strHdTime.Format(L"%4d/%02d/%02d %02d:%02d:%02d",st.wYear,st.wMonth,st.wDay,st.wHour,st.wMinute,st.wSecond);
-				CString strUser = A2T(root[HEARTMSG[EM_HEART_USER]].asCString());
-				CString strName = A2T(root[HEARTMSG[EM_HEART_NAME]].asCString());
-				if (pInfo)
-				{
-					WaitForSingleObject(m_mutex, INFINITE); 
-					pInfo->user = T2A(strUser);
-					pInfo->name = T2A(strName);
-					ReleaseMutex(m_mutex);
-				}
 			}
 			break;
 		case SOCK_CMD_GET_USER:
@@ -852,22 +929,16 @@ void CPayServerDlg::DoRun(string strData,Json::Value& js,TPkgInfo* pInfo)
 void CPayServerDlg::OnDestroy()
 {
 	CDialogEx::OnDestroy();
-	if(m_Server->Stop())
+	m_bExit = TRUE;
+	if (m_hSetStart != INVALID_HANDLE_VALUE)
 	{
-		::LogServerStop();
-	}
-	else
-	{
-		ASSERT(FALSE);
+		WaitForSingleObject(m_hSetStart,INFINITE);
+		m_hSetStart = INVALID_HANDLE_VALUE;
 	}
 	KillTimer(1);
 	CloseHandle(m_mutex);
-	m_bExit =TRUE;
-	if (m_SocketHandle!=INVALID_HANDLE_VALUE)
-	{
-		WaitForSingleObject(m_SocketHandle,INFINITE);
-		m_SocketHandle = INVALID_HANDLE_VALUE;
-	}
+	m_Server->Stop();
+	KillDog();
 }
 
 
@@ -879,33 +950,44 @@ void CPayServerDlg::OnTimer(UINT_PTR nIDEvent)
 	m_listCtrl.DeleteAllItems();
 	WaitForSingleObject(m_mutex, INFINITE); 
 	DWORD nCount = m_Server->GetConnectionCount();
-	CONNID* pIDs = new CONNID[nCount];
-	if(m_Server->GetAllConnectionIDs(pIDs,nCount))
+	if (nCount > 0)
 	{
-		for (int i=0;i<nCount;i++)
+		CONNID* pIDs = new CONNID[nCount];
+		BOOL bRet = m_Server->GetAllConnectionIDs(pIDs,nCount);
+		if( bRet)
 		{
-			TPkgInfo* pInfo = FindPkgInfo(m_Server,pIDs[i]);
-			CString strUser = A2T(pInfo->user.c_str());
-			m_listCtrl.InsertItem(i,strUser);
-			str.Format(L"%d",pInfo->nPort);
-			m_listCtrl.SetItemText(i,1,str);
-			CString strName = A2T(pInfo->name.c_str());
-			m_listCtrl.SetItemText(i,2,strName);
-			DWORD ms_time=0;
-			m_Server->GetConnectPeriod(pIDs[i],ms_time);
-			int all_sec = ms_time/1000;
-			int sec = all_sec%60;
-			int all_min = all_sec/60;
-			int min = all_min%60;
-			int h = all_min/60;
-			str.Format(L"%02d:%02d:%02d",h,min,sec);
-			m_listCtrl.SetItemText(i,3,str);
+			for (int i=0;i<nCount;i++)
+			{
+				TPkgInfo* pInfo = FindPkgInfo(m_Server,pIDs[i]);
+				if (pInfo)
+				{
+					CString strUser = A2T(pInfo->user.c_str());
+					m_listCtrl.InsertItem(i,strUser);
+					str.Format(L"%d",pInfo->nPort);
+					m_listCtrl.SetItemText(i,1,str);
+					if (pInfo->em_LinkType == LINK_TYPE_DOG)
+					{
+						m_listCtrl.SetItemText(i,2,L"HoldDog");
+					}	
+					DWORD ms_time=0;
+					m_Server->GetConnectPeriod(pIDs[i],ms_time);
+					int all_sec = ms_time/1000;
+					int sec = all_sec%60;
+					int all_min = all_sec/60;
+					int min = all_min%60;
+					int all_h = all_min/60;
+					int day = all_h/24;
+					int h = all_h%24;
+					str.Format(L"%d天 %02d:%02d:%02d",day,h,min,sec);
+					m_listCtrl.SetItemText(i,3,str);
+				}
+			}
 		}
+		delete[] pIDs;
 	}
     str.Format(L"当前连接数：%d",nCount);
 	m_NowSta.SetWindowTextW(str);
 
-	delete[] pIDs;
 	ReleaseMutex(m_mutex); 
 	CDialogEx::OnTimer(nIDEvent);
 }
@@ -991,7 +1073,6 @@ void CPayServerDlg::RemovePkgInfo(ITcpServer* pSender, CONNID dwConnID)
 {
 	TPkgInfo* pInfo = FindPkgInfo(pSender, dwConnID);
 	ASSERT(pInfo != nullptr);
-
 	delete pInfo;
 }
 
@@ -1008,24 +1089,30 @@ EnHandleResult CPayServerDlg::OnPrepareListen(ITcpServer* pSender, SOCKET soList
 
 EnHandleResult CPayServerDlg::OnAccept(ITcpServer* pSender, CONNID dwConnID, SOCKET soClient)
 {
-	BOOL bPass = TRUE;
-	TCHAR szAddress[40];
-	int iAddressLen = sizeof(szAddress) / sizeof(TCHAR);
-	USHORT usPort;
-
-	pSender->GetRemoteAddress(dwConnID, szAddress, iAddressLen, usPort);
-
-	if(bPass)
+	try
 	{
-		TPkgInfo* pInfo = new TPkgInfo(true, sizeof(TPkgHeader));
-		pInfo->nPort = usPort;
-		pSender->SetConnectionExtra(dwConnID, pInfo);
-		CString str;
-		str.Format(L"%d:%s 连入",dwConnID,szAddress);
-		AddString(str);
-	}
+		BOOL bPass = TRUE;
+		TCHAR szAddress[40];
+		int iAddressLen = sizeof(szAddress) / sizeof(TCHAR);
+		USHORT usPort;
 
-	return bPass ? HR_OK : HR_ERROR;
+		pSender->GetRemoteAddress(dwConnID, szAddress, iAddressLen, usPort);
+
+		if(bPass)
+		{
+			TPkgInfo* pInfo = new TPkgInfo(true, sizeof(TPkgHeader));
+			pInfo->nPort = usPort;
+			pSender->SetConnectionExtra(dwConnID, pInfo);
+			CString str;
+			str.Format(L"%d:%s 连入",dwConnID,szAddress);
+			AddString(str);
+		}
+		return bPass ? HR_OK : HR_ERROR;
+	}
+	catch (...)
+	{
+		return HR_ERROR;
+	}
 }
 
 EnHandleResult CPayServerDlg::OnSend(ITcpServer* pSender, CONNID dwConnID, const BYTE* pData, int iLength)
@@ -1035,45 +1122,65 @@ EnHandleResult CPayServerDlg::OnSend(ITcpServer* pSender, CONNID dwConnID, const
 
 EnHandleResult CPayServerDlg::OnReceive(ITcpServer* pSender, CONNID dwConnID, int iLength)
 {
-	TPkgInfo* pInfo			= FindPkgInfo(pSender, dwConnID);
-	ITcpPullServer* pServer	= ITcpPullServer::FromS(pSender);
-
-	if(pInfo != nullptr)
+	try
 	{
-		int required = pInfo->length;
-		int remain = iLength;
+		TPkgInfo* pInfo			= FindPkgInfo(pSender, dwConnID);
+		ITcpPullServer* pServer	= ITcpPullServer::FromS(pSender);
 
-		while(remain >= required)
+		if(pInfo != nullptr && pServer != nullptr)
 		{
-			remain -= required;
-			CBufferPtr buffer(required);
+			int required = pInfo->length;
+			int remain = iLength;
 
-			EnFetchResult result = pServer->Fetch(dwConnID, buffer, (int)buffer.Size());
-			unsigned char* buf = buffer;
-			if(result == FR_OK)
+			while(remain >= required)
 			{
-				if(pInfo->is_header)
+				remain -= required;
+				CBufferPtr buffer(required);
+
+				EnFetchResult result = pServer->Fetch(dwConnID, buffer, (int)buffer.Size());
+				if(result == FR_OK)
 				{
-					TPkgHeader* pHeader = (TPkgHeader*)buffer.Ptr();
-					required = pHeader->body_len;
+					if(pInfo->is_header)
+					{
+						TPkgHeader* pHeader = (TPkgHeader*)buffer.Ptr();
+						if (pHeader->em_LinkType != LINK_TYPE_CLIENT && pHeader->em_LinkType != LINK_TYPE_DOG)
+						{
+							return HR_ERROR;
+						}
+						else
+						{
+							required = pHeader->body_len;
+							pInfo->em_LinkType = pHeader->em_LinkType;
+						}
+					}
+					else
+					{
+						TPkgBody* pBody = (TPkgBody*)(BYTE*)buffer;
+						Json::Value js;
+						g_PaySerDlg->DoRun(pBody->desc,js,pInfo);
+						SendTo(dwConnID,js);
+
+						required = sizeof(TPkgHeader);
+					}
+
+					pInfo->is_header = !pInfo->is_header;
+					pInfo->length	 = required;
 				}
 				else
 				{
-					TPkgBody* pBody = (TPkgBody*)(BYTE*)buffer;
-					Json::Value js;
-					g_PaySerDlg->DoRun(pBody->desc,js,pInfo);
-					SendTo(dwConnID,js);
-
-					required = sizeof(TPkgHeader);
+					CString str;
+					str.Format(L"fetch faild:%d",result);
+					AddString(str);
+					return HR_ERROR;
 				}
-
-				pInfo->is_header = !pInfo->is_header;
-				pInfo->length	 = required;
 			}
 		}
+		return HR_OK;
 	}
-
-	return HR_OK;
+	catch (...)
+	{
+		return HR_ERROR;
+	}
 }
 
 EnHandleResult CPayServerDlg::OnClose(ITcpServer* pSender, CONNID dwConnID, EnSocketOperation enOperation, int iErrorCode)

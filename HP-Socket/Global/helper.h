@@ -41,6 +41,14 @@ enum EnAppState
 	ST_STARTING, ST_STARTED, ST_CONNECTING, ST_CONNECTED, ST_STOPPING, ST_STOPPED
 };
 
+enum LINK_TYPE
+{
+	LINK_TYPE_CLIENT,//客户端连接
+	LINK_TYPE_DOG,//看门狗
+	LINK_TYPE_UNKNOW,//陌生连接
+	LINK_TYPE_MAX
+};
+
 struct info_msg
 {
 	LPCTSTR name;
@@ -60,7 +68,13 @@ private:
 struct TPkgHeader 
 {
 	DWORD seq;
+    LINK_TYPE em_LinkType;
 	int body_len;
+
+	TPkgHeader()
+	{
+		em_LinkType = LINK_TYPE_UNKNOW;
+	}
 };
 
 struct TPkgBody 
@@ -78,6 +92,7 @@ struct TPkgInfo
 	std::string user;
 	std::string name;
 	int  nPort;
+	LINK_TYPE em_LinkType;
 
 	TPkgInfo(bool header = true, int len = sizeof(TPkgHeader)) : is_header(header), length(len) {}
 	void Reset() {is_header = true, length = sizeof(TPkgHeader);}

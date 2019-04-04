@@ -24,7 +24,6 @@ CString DateName[] = {L"»´≤ø",L"◊ÓΩ¸“ª÷‹", L"◊ÓΩ¸“ª∏ˆ‘¬", L"◊ÓΩ¸»˝∏ˆ‘¬", L"∞ÎƒÍƒ
 
 CGloble::CGloble():m_Client(this)
 {
-	m_Client->SetKeepAliveTime(2000);
 	m_pCallBack = NULL;
 	m_pHand = NULL;
 	m_heart = INVALID_HANDLE_VALUE;
@@ -118,9 +117,6 @@ bool CGloble::InitGloble()
 	_file.open(m_ConfigFilePath,ios::in);
 	if(!_file)
 	{
-		CString str;
-		str.Format(L"’“≤ªµΩ≈‰÷√Œƒº˛: %s £°",m_ConfigFilePath);
-		MessageBox(NULL,str,L"error",NULL);
 		return false;
 	}
 	else
@@ -523,6 +519,7 @@ int CGloble::SendTo(string strData)
 
 	TPkgHeader header;
 	header.seq = ++SEQ;
+	header.em_LinkType = LINK_TYPE_CLIENT;
 	header.body_len = body_len;
 
 	TPkgBody* pBody = (TPkgBody*)_alloca(body_len);
