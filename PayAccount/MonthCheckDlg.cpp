@@ -146,6 +146,7 @@ void CMonthCheckDlg::GetMonthPay(Json::Value root)
 						{
 							Json::Value one3 = ones3[k];
 							DAYPAY day_pay;
+							day_pay.type = (DAYPAY_TYPE)one3[MPAYMSG[EM_GET_MPAY_TYPE]].asInt();
 							day_pay.money = one3[MPAYMSG[EM_GET_MPAY_MONEY]].asCString();
 							day.v_daypay.push_back(day_pay);
 						}
@@ -411,7 +412,10 @@ void CMonthCheckDlg::SetListValue(vector<MONTH_PAY_STAFF> vStaffs)
 			double money = 0;
 			for (int n = 0; n < vStaffs[i].vDays[j].v_daypay.size();n++)
 			{
-				money += _ttof(vStaffs[i].vDays[j].v_daypay[n].money);
+				if (vStaffs[i].vDays[j].v_daypay[n].type == DAYPAY_TYPE_DEL)
+					money -= _ttof(vStaffs[i].vDays[j].v_daypay[n].money);
+				else
+				    money += _ttof(vStaffs[i].vDays[j].v_daypay[n].money);
 			}
 			allMoney += money;
 			strTmp.Format(L"%.2lf", money);

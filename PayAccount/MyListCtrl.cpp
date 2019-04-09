@@ -340,5 +340,6 @@ void CMyListCtrl::OnSelchangeEdit(UINT nID)
 	{
 		allMoney += m_ListLine[i].money;
 	}
-	pThis->SetAllPayCtrl(DAYPAY_TYPE_JIJIAN,allMoney);
+	//pThis->SetAllPayCtrl(DAYPAY_TYPE_JIJIAN,allMoney);
+	pThis->SetAllPayCtrl();
 }

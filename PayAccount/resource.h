@@ -83,6 +83,7 @@
 #define IDC_EDIT_DAY                    1026
 #define IDC_RDO_N                       1026
 #define IDC_GROUP1                      1027
+#define IDC_GROUP2                      1028
 #define IDC_BTN_ADD                     1029
 #define IDC_BTN_DEL                     1030
 #define IDC_STC1                        1031
@@ -174,6 +175,7 @@
 #define IDC_EDIT1                       1107
 #define IDC_STA1                        1108
 #define IDC_EDIT_PORT                   1108
+#define IDC_EDIT5                       1108
 #define IDC_STA2                        1109
 #define IDC_STA3                        1110
 #define IDC_STABTN                      1111
@@ -185,6 +187,7 @@
 #define IDC_STAW                        1115
 #define IDC_STA_NET                     1116
 #define IDC_STA_NET1                    1117
+#define IDC_EDIT_DEL                    1118
 #define ID_32771                        32771
 #define ID_32772                        32772
 #define ID_32773                        32773
@@ -224,7 +227,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        155
 #define _APS_NEXT_COMMAND_VALUE         32803
-#define _APS_NEXT_CONTROL_VALUE         1118
+#define _APS_NEXT_CONTROL_VALUE         1119
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

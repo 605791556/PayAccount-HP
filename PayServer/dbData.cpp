@@ -2246,7 +2246,13 @@ bool CDbData::AddDayPay(CString strStaffID, vector<DAYPAY> vec, CString strDate)
 		{
 			char stmp[1024] = { 0 };
 
-			if (vec[i].type == DAYPAY_TYPE_DAY)
+			if (vec[i].type == DAYPAY_TYPE_DEL)
+			{
+				sprintf(stmp, "INSERT INTO day_pay(staffID,pay_type,money,del_msg,date) VALUES('%s','%d','%s','%s','%s');",
+					W2A(strStaffID), (int)vec[i].type, W2A(vec[i].money), g_Globle.EncodeToUTF8(W2A(vec[i].strMsg) ), W2A(strDate));
+				strcat(sql, stmp);
+			}
+			else if (vec[i].type == DAYPAY_TYPE_DAY)
 			{
 				sprintf(stmp, "INSERT INTO day_pay(staffID,pay_type,payDay,days,money,date) VALUES('%s','%d','%s','%s','%s','%s');",
 					W2A(strStaffID), (int)vec[i].type, W2A(vec[i].strPayDay), W2A(vec[i].strDays),W2A(vec[i].money), W2A(strDate));
@@ -2283,7 +2289,7 @@ bool CDbData::_GetDayPay(Json::Value& root,CString strStaffID, CString strDate)
 	USES_CONVERSION;
 	try
 	{
-		sprintf(sql, "SELECT id,pay_type,proID,bookID,pay,number,money,payDay,days,proName,bookName FROM day_pay WHERE staffID='%s' AND date='%s'",W2A(strStaffID),W2A(strDate));
+		sprintf(sql, "SELECT id,pay_type,proID,bookID,pay,number,money,payDay,days,proName,bookName,del_msg FROM day_pay WHERE staffID='%s' AND date='%s'",W2A(strStaffID),W2A(strDate));
 		sqlite3_stmt *stmt = NULL;
 		int result = sqlite3_prepare_v2(m_sqlite, sql, -1, &stmt, NULL);
 		if (result == SQLITE_OK)
@@ -2311,6 +2317,11 @@ bool CDbData::_GetDayPay(Json::Value& root,CString strStaffID, CString strDate)
 					one[DAYPAYMSG[EM_DAYPAY_MSG_PRONAME]] = g_Globle.UTF8ToEncode(tmp);
 					char* tmp2 = (char*)sqlite3_column_text(stmt, 10);
 					one[DAYPAYMSG[EM_DAYPAY_MSG_BOOKNAME]] = g_Globle.UTF8ToEncode(tmp2);
+				}
+				else if (type == DAYPAY_TYPE_DEL)
+				{
+					char* tmp = (char*)sqlite3_column_text(stmt, 11);
+					one[DAYPAYMSG[EM_DAYPAY_MSG_DELMSG]] = g_Globle.UTF8ToEncode(tmp);
 				}
 				one[DAYPAYMSG[EM_DAYPAY_MSG_MONEY]] = (char*)sqlite3_column_text(stmt, 6);	
 				
@@ -2349,7 +2360,7 @@ bool CDbData::_GetDayPayList(Json::Value& js,Json::Value root)
 	}
 
 	bool bret=true;
-	char sql[MAX_PATH];
+	char sql[1024];
 	USES_CONVERSION;
 
 	try
@@ -2360,7 +2371,7 @@ bool CDbData::_GetDayPayList(Json::Value& js,Json::Value root)
 			one1[CMD_GETDAYPAY[EM_GET_DAYPAY_STAFFID]]=T2A(v_staffs[i].strStaffID);
 			one1[CMD_GETDAYPAY[EM_GET_DAYPAY_STAFFNAME]]=T2A(v_staffs[i].strname);
 
-			sprintf(sql, "SELECT id,pay_type,proID,bookID,pay,number,money,payDay,days,proName,bookName FROM day_pay WHERE staffID='%s' AND date='%s'",W2A(v_staffs[i].strStaffID),W2A(strDate));
+			sprintf(sql, "SELECT id,pay_type,proID,bookID,pay,number,money,payDay,days,proName,bookName,del_msg FROM day_pay WHERE staffID='%s' AND date='%s'",W2A(v_staffs[i].strStaffID),W2A(strDate));
 			sqlite3_stmt *stmt = NULL;
 			int result = sqlite3_prepare_v2(m_sqlite, sql, -1, &stmt, NULL);
 			if (result == SQLITE_OK)
@@ -2372,7 +2383,12 @@ bool CDbData::_GetDayPayList(Json::Value& js,Json::Value root)
 					one[DAYPAYMSG[EM_DAYPAY_MSG_ID]] = sqlite3_column_int(stmt, 0);
 					DAYPAY_TYPE type = (DAYPAY_TYPE)sqlite3_column_int(stmt, 1);
 					one[DAYPAYMSG[EM_DAYPAY_MSG_TYPE]] = type;
-					if (type == DAYPAY_TYPE_DAY)
+					if (type == DAYPAY_TYPE_DEL)
+					{
+						char* tmp = (char*)sqlite3_column_text(stmt, 11);
+						one[DAYPAYMSG[EM_DAYPAY_MSG_DELMSG]] = g_Globle.UTF8ToEncode(tmp);
+					}
+					else if (type == DAYPAY_TYPE_DAY)
 					{
 						one[DAYPAYMSG[EM_DAYPAY_MSG_PAYDAY]] = (char*)sqlite3_column_text(stmt, 7);
 						one[DAYPAYMSG[EM_DAYPAY_MSG_DAYS]] = (char*)sqlite3_column_text(stmt, 8);
@@ -2456,7 +2472,7 @@ bool CDbData::_GetMouthPay(Json::Value& js,Json::Value root,DWORD& time)
 	{
 		DWORD t1=GetTickCount();
 		sqlite3_exec(m_sqlite, "begin transaction", 0, 0, NULL);
-		sprintf(sql, "SELECT money FROM day_pay WHERE staffID=? AND date=?");
+		sprintf(sql, "SELECT pay_type,money FROM day_pay WHERE staffID=? AND date=?");
 		sqlite3_stmt *stmt = NULL;
 		int result = sqlite3_prepare_v2(m_sqlite, sql, -1, &stmt, NULL);
 
@@ -2483,7 +2499,8 @@ bool CDbData::_GetMouthPay(Json::Value& js,Json::Value root,DWORD& time)
 					{
 						Json::Value one3;
 						CString str;
-						one3[MPAYMSG[EM_GET_MPAY_MONEY]] = (char*)sqlite3_column_text(stmt, 0);
+						one3[MPAYMSG[EM_GET_MPAY_TYPE]] = sqlite3_column_int(stmt, 0);
+						one3[MPAYMSG[EM_GET_MPAY_MONEY]] = (char*)sqlite3_column_text(stmt, 1);
 						one2[CMD_RetType[EM_CMD_RETYPE_VALUE]].append(one3);
 					}
 				}

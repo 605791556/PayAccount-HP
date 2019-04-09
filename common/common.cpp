@@ -276,7 +276,8 @@ const char DAYPAYMSG[EM_DAYPAY_MSG_MAX][CMD_CHAR_MAX]=
 	"number",
 	"money",
 	"payday",
-	"days"
+	"days",
+	"del_msg"
 };
 
 const char MPAYMSG[EM_GET_MPAY_MAX][CMD_CHAR_MAX]=

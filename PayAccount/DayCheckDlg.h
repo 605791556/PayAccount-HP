@@ -46,13 +46,15 @@ public:
 	void SetPerDayCtrlShow(int nCmdShow);
 	void SetJiJianCtrlShow(int nCmdShow);
 	void SetAllPayCtrl(DAYPAY_TYPE type,double money);
+	void SetAllPayCtrl();
 	void SetListCtrlValue();
 	virtual void UpdateDlg();
 	void SetNotifyWnd(CWorkCalDlg* pdata,CString strDate);
 
 	CEditSet m_edit_per;
 	CEditSet m_edit_day;
-	CStatic m_GroupCtrl;
+	CEditSet m_EditDel;
+	CStatic  m_GroupCtrl;
 	afx_msg void OnBnClickedBtnSave();
 	afx_msg void OnEnChangeEditPer();
 	afx_msg void OnEnChangeEditDay();
@@ -72,4 +74,5 @@ public:
 	void SendToGetOnePay(CString strStaffID,int proID,CString strBookID,int nItem);
 	void GetOnePay(Json::Value root);
 	CStatic m_ts;
+	afx_msg void OnEnChangeEditDel();
 };

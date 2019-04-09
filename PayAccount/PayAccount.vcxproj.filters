@@ -254,6 +254,9 @@
     <ClInclude Include="..\HP-Socket\Common\Src\GeneralHelper.h">
       <Filter>globle</Filter>
     </ClInclude>
+    <ClInclude Include="Template_Class.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="res\PayAccount.ico">

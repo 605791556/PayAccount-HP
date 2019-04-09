@@ -161,12 +161,12 @@ BOOL CWorkCalDlg::OnInitDialog()
 
 void CWorkCalDlg::InitListCtrl()
 {
-	TCHAR rgtsz[5][10] = { _T("序号"), _T("姓名"), _T("按天工资"), _T("计件工资"), _T("共计金额") };
+	TCHAR rgtsz[6][10] = { _T("序号"), _T("姓名"), _T("按天工资"), _T("计件工资"), _T("扣除"), _T("共计金额") };
 
 	LV_COLUMN lvcolumn;
 	CRect rect;
 	m_ListCtrl.GetWindowRect(&rect);
-	for (int i=0;i<5;i++)
+	for (int i=0;i<6;i++)
 	{
 		lvcolumn.mask = LVCF_FMT | LVCF_SUBITEM | LVCF_TEXT
 			| LVCF_WIDTH | LVCF_ORDER;
@@ -338,7 +338,11 @@ void CWorkCalDlg::GetOnePayList(Json::Value root)
 							CString strMoney;
 							strMoney = one[DAYPAYMSG[EM_DAYPAY_MSG_MONEY]].asCString();
 
-							if (type == DAYPAY_TYPE_DAY)
+							if (type == DAYPAY_TYPE_DEL)
+							{
+								cal.del_money += _ttof(strMoney);
+							}
+							else if (type == DAYPAY_TYPE_DAY)
 							{
 								cal.day_money += _ttof(strMoney);
 							}
@@ -371,23 +375,33 @@ void CWorkCalDlg::SetListValue()
 			{
 				bFind = true;
 				double money = 0;
-				money = m_vWorkCal[i].day_money + m_vWorkCal[i].jj_money;
+				money = m_vWorkCal[i].day_money + m_vWorkCal[i].jj_money - m_vWorkCal[i].del_money;
 
 				str.Format(L"%d",j+1);
 				m_ListCtrl.InsertItem(j,str);//序号
+
 				m_ListCtrl.SetItemText(j,1,m_vWorkCal[i].strName);//姓名
+
 				if (m_vWorkCal[i].day_money == 0)
 					str.Format(L"0");
 				else
 				    str.Format(L"%.02f",m_vWorkCal[i].day_money);
 				m_ListCtrl.SetItemText(j,2,str);//按天工资
+
 				if (m_vWorkCal[i].jj_money == 0)
 					str.Format(L"0");
 				else
 					str.Format(L"%.02f",m_vWorkCal[i].jj_money);
 				m_ListCtrl.SetItemText(j,3,str);//计件工资
+
+				if (m_vWorkCal[i].del_money == 0)
+					str.Format(L"0");
+				else
+					str.Format(L"%.02f",m_vWorkCal[i].del_money);
+				m_ListCtrl.SetItemText(j,4,str);//扣除工资
+
 				str.Format(L"%.02f",money);
-				m_ListCtrl.SetItemText(j,4,str);//共计
+				m_ListCtrl.SetItemText(j,5,str);//共计
 				all_money += money;
 				break;
 			}
@@ -399,10 +413,9 @@ void CWorkCalDlg::SetListValue()
 			m_ListCtrl.SetItemText(j,1,m_vet[j].strname);//姓名
 			str.Format(L"0");
 			m_ListCtrl.SetItemText(j,2,str);//按天工资
-			str.Format(L"0");
 			m_ListCtrl.SetItemText(j,3,str);//计件工资
-			str.Format(L"0");
-			m_ListCtrl.SetItemText(j,4,str);//共计
+			m_ListCtrl.SetItemText(j,4,str);//扣除工资
+			m_ListCtrl.SetItemText(j,5,str);//共计
 		}
 		m_ListCtrl.SetItemData(j,(DWORD_PTR)&m_vet[j]);
 	}

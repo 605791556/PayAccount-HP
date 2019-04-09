@@ -139,6 +139,7 @@ enum DAYPAY_TYPE
 {
 	DAYPAY_TYPE_DAY,//按天
 	DAYPAY_TYPE_JIJIAN,//计件
+	DAYPAY_TYPE_DEL,//扣除
 	DAYPAY_TYPE_MAX
 };
 
@@ -172,7 +173,9 @@ struct DAYPAY
 	CString strBookName;
 	CString pay;//单价
 	double number;//数量
-	CString money;//单价x数量
+	CString money;
+
+	CString strMsg;
 
 	CString strPayDay;
 	CString strDays;

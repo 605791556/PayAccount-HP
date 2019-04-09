@@ -67,7 +67,7 @@ BOOL CPayServerApp::InitInstance()
 	// 例如修改为公司或组织名
 	SetRegistryKey(_T("定制管理系统"));
 
-	HANDLE hMutex=::CreateMutex(NULL,TRUE,L"PayServer-HP");//第三个参数FirstName这个名称可以任意取，第二个参数要为TRUE表示当前实例占用此互斥对象
+	HANDLE hMutex=::CreateMutex(NULL,TRUE,L"PayServer-HP2");//第三个参数FirstName这个名称可以任意取，第二个参数要为TRUE表示当前实例占用此互斥对象
 	if (hMutex!=NULL)
 	{
 		if (GetLastError()==ERROR_ALREADY_EXISTS)

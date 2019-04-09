@@ -876,12 +876,16 @@ void CPayServerDlg::DoRun(string strData,Json::Value& js,TPkgInfo* pInfo)
 						{
 							DAYPAY stu;
 							stu.type=(DAYPAY_TYPE)vle[i][DAYPAYMSG[EM_DAYPAY_MSG_TYPE]].asInt();
-							if (stu.type == DAYPAY_TYPE_DAY)
+							if (stu.type == DAYPAY_TYPE_DEL)
+							{
+								stu.strMsg = vle[i][DAYPAYMSG[EM_DAYPAY_MSG_DELMSG]].asCString();
+							}
+							else if (stu.type == DAYPAY_TYPE_DAY)
 							{
 								stu.strPayDay = vle[i][DAYPAYMSG[EM_DAYPAY_MSG_PAYDAY]].asCString();
 								stu.strDays = vle[i][DAYPAYMSG[EM_DAYPAY_MSG_DAYS]].asCString();
 							}
-							else
+							else if (stu.type == DAYPAY_TYPE_JIJIAN)
 							{
 								stu.proID = vle[i][DAYPAYMSG[EM_DAYPAY_MSG_PROID]].asInt();
 								stu.strBookID = vle[i][DAYPAYMSG[EM_DAYPAY_MSG_BOOKID]].asCString();

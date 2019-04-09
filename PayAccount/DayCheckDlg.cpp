@@ -125,6 +125,7 @@ CDayCheckDlg::CDayCheckDlg(CWnd* pParent /*=NULL*/)
 {
 	m_edit_per.m_type = EDIT_TYPE_FLOAT;
 	m_edit_day.m_type = EDIT_TYPE_FLOAT;
+	m_EditDel.m_type = EDIT_TYPE_FLOAT;
 	pDlg = NULL;
 }
 
@@ -155,6 +156,7 @@ void CDayCheckDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_EDIT_DAY, m_edit_day);
 	DDX_Control(pDX, IDC_ALL, m_staticAll);
 	DDX_Control(pDX, IDC_STA, m_ts);
+	DDX_Control(pDX, IDC_EDIT_DEL, m_EditDel);
 }
 
 
@@ -166,6 +168,7 @@ BEGIN_MESSAGE_MAP(CDayCheckDlg, CDialog)
 	ON_EN_CHANGE(IDC_EDIT_DAY, &CDayCheckDlg::OnEnChangeEditDay)
 	ON_MESSAGE(WM_DAYCHECK_CALL, &CDayCheckDlg::OnCallBack)
 	ON_WM_CTLCOLOR()
+	ON_EN_CHANGE(IDC_EDIT_DEL, &CDayCheckDlg::OnEnChangeEditDel)
 END_MESSAGE_MAP()
 
 
@@ -294,12 +297,16 @@ void CDayCheckDlg::SendToSaveDayPay()
 		for (int i=0;i<nSize;i++)
 		{
 			Json::Value one;
-			if (m_vSaves[i].type == DAYPAY_TYPE_DAY)
+			if (m_vSaves[i].type == DAYPAY_TYPE_DEL)
+			{
+				 one[DAYPAYMSG[EM_DAYPAY_MSG_DELMSG]] = T2A(m_vSaves[i].strMsg);
+			}
+			else if (m_vSaves[i].type == DAYPAY_TYPE_DAY)
 			{
 				one[DAYPAYMSG[EM_DAYPAY_MSG_PAYDAY]] = T2A(m_vSaves[i].strPayDay);
 				one[DAYPAYMSG[EM_DAYPAY_MSG_DAYS]] = T2A(m_vSaves[i].strDays);
 			}
-			else
+			else if (m_vSaves[i].type == DAYPAY_TYPE_JIJIAN)
 			{
 				one[DAYPAYMSG[EM_DAYPAY_MSG_PROID]] = m_vSaves[i].proID;
 				one[DAYPAYMSG[EM_DAYPAY_MSG_BOOKID]] = T2A(m_vSaves[i].strBookID);
@@ -308,8 +315,8 @@ void CDayCheckDlg::SendToSaveDayPay()
 				one[DAYPAYMSG[EM_DAYPAY_MSG_PRONAME]] = T2A(m_vSaves[i].strProName);
 				one[DAYPAYMSG[EM_DAYPAY_MSG_BOOKNAME]] = T2A(m_vSaves[i].strBookName);
 			}
-			one[DAYPAYMSG[EM_DAYPAY_MSG_TYPE]] = m_vSaves[i].type;
 			one[DAYPAYMSG[EM_DAYPAY_MSG_MONEY]] = T2A(m_vSaves[i].money);
+			one[DAYPAYMSG[EM_DAYPAY_MSG_TYPE]] = m_vSaves[i].type;
 			root[CMD_RetType[EM_CMD_RETYPE_VALUE]].append(one);
 		}
 		Json::FastWriter writer;  
@@ -403,7 +410,11 @@ void CDayCheckDlg::GetDayPay(Json::Value root)
 				DAYPAY stu;
 				stu.id = js[i][DAYPAYMSG[EM_DAYPAY_MSG_ID]].asInt();
 				stu.type = (DAYPAY_TYPE)js[i][DAYPAYMSG[EM_DAYPAY_MSG_TYPE]].asInt();
-				if (stu.type == DAYPAY_TYPE_DAY)
+				if (stu.type == DAYPAY_TYPE_DEL)
+				{
+					stu.strMsg = js[i][DAYPAYMSG[EM_DAYPAY_MSG_DELMSG]].asCString();
+				}
+				else if (stu.type == DAYPAY_TYPE_DAY)
 				{
 					stu.strPayDay = js[i][DAYPAYMSG[EM_DAYPAY_MSG_PAYDAY]].asCString();
 					stu.strDays = js[i][DAYPAYMSG[EM_DAYPAY_MSG_DAYS]].asCString();
@@ -448,7 +459,8 @@ void CDayCheckDlg::GetOnePay(Json::Value root)
 	{
 		allMoney += m_ListCtrl.m_ListLine[i].money;
 	}
-	SetAllPayCtrl(DAYPAY_TYPE_JIJIAN,allMoney);
+	//SetAllPayCtrl(DAYPAY_TYPE_JIJIAN,allMoney);
+	SetAllPayCtrl();
 }
 
 void CDayCheckDlg::UpdateDlg()
@@ -477,7 +489,6 @@ void CDayCheckDlg::SetListCtrlValue()
 	//4.控件赋值
 	SetAllPayCtrl(DAYPAY_TYPE_MAX,0);
 	m_ListCtrl.DeleteAllItems();
-	//SetDlgItemText(IDC_EDIT_PER,  L"");
 	SetDlgItemText(IDC_EDIT_DAY,  L"");
 	int ndex=0;
 	for (int i = 0; i < m_vCal.size(); i++)
@@ -503,11 +514,17 @@ void CDayCheckDlg::SetListCtrlValue()
 			SetDlgItemText(IDC_EDIT_PER, m_vCal[i].strPayDay);
 			SetDlgItemText(IDC_EDIT_DAY, m_vCal[i].strDays);
 
-			//double money = _ttof(m_vCal[i].strPayDay) * _ttof(m_vCal[i].strDays);
-			double money = _ttof(m_vCal[i].money);
-			SetAllPayCtrl(DAYPAY_TYPE_DAY, money);
+			//double money = _ttof(m_vCal[i].money);
+			//SetAllPayCtrl(DAYPAY_TYPE_DAY, money);
+		}
+		else if (m_vCal[i].type == DAYPAY_TYPE_DEL)
+		{
+			m_EditDel.SetWindowTextW(m_vCal[i].money);
+			SetDlgItemText(IDC_EDIT_MSG, m_vCal[i].strMsg);
+			//SetAllPayCtrl(DAYPAY_TYPE_DEL, _ttof(m_vCal[i].money));
 		}
 	}
+	SetAllPayCtrl();
 }
 
 void CDayCheckDlg::SetPerDayCtrlShow(int nCmdShow)
@@ -594,6 +611,18 @@ void CDayCheckDlg::OnBnClickedBtnSave()
 		m_vSaves.push_back(day_cal);
 	}
 	
+	//扣除
+	CString strDelMoney,strMsg;
+	m_EditDel.GetWindowTextW(strDelMoney);
+	if ( _ttof(strDelMoney) != 0)
+	{
+		GetDlgItemText(IDC_EDIT_MSG,strMsg);
+		DAYPAY cal;
+		cal.type = DAYPAY_TYPE_DEL;
+		cal.money = strDelMoney;
+		cal.strMsg = strMsg;
+		m_vSaves.push_back(cal);
+	}
 
 	//件
 	int nCount = m_ListCtrl.m_ListLine.size();
@@ -640,6 +669,36 @@ void CDayCheckDlg::OnBnClickedBtnSave()
 	SendToDelDayPay(m_strStaffID,m_strDate);
 }
 
+void CDayCheckDlg::SetAllPayCtrl()
+{
+	CString strMoney;
+	double all_money = 0;
+	double jj_money = 0;
+	int nSize = m_ListCtrl.m_ListLine.size();
+	for (int i = 0; i < nSize; i++)
+	{
+		jj_money += m_ListCtrl.m_ListLine[i].money;
+	}
+	all_money += jj_money;
+	strMoney.Format(L"金额：%.04f", jj_money);
+	SetDlgItemText(IDC_ZJ, strMoney);
+
+	CString strPayDay,strDays;
+	GetDlgItemText(IDC_EDIT_PER, strPayDay);
+	GetDlgItemText(IDC_EDIT_DAY, strDays);
+	double f_daymoney = _ttof(strPayDay) * _ttof(strDays);
+	all_money += f_daymoney;
+	strMoney.Format(L"金额：%.04f", f_daymoney);
+	SetDlgItemText(IDC_ZJ2, strMoney);
+
+	CString strDelMoney;
+	m_EditDel.GetWindowTextW(strDelMoney);
+	all_money -= _ttof(strDelMoney);
+
+	strMoney.Format(L"总计：%.04f", all_money);
+	SetDlgItemText(IDC_ALL,strMoney);
+}
+
 void CDayCheckDlg::SetAllPayCtrl(DAYPAY_TYPE type, double money)
 {
 	CString str;
@@ -654,6 +713,10 @@ void CDayCheckDlg::SetAllPayCtrl(DAYPAY_TYPE type, double money)
 		{
 			all_money += m_ListCtrl.m_ListLine[i].money;
 		}
+		CString strDelMoney;
+		m_EditDel.GetWindowTextW(strDelMoney);
+		all_money -= _ttof(strDelMoney);
+
 		CString strMoney;
 		strMoney.Format(L"总计：%.04f", all_money);
 		SetDlgItemText(IDC_ALL,strMoney);
@@ -666,6 +729,30 @@ void CDayCheckDlg::SetAllPayCtrl(DAYPAY_TYPE type, double money)
 		GetDlgItemText(IDC_EDIT_PER, strPayDay);
 		GetDlgItemText(IDC_EDIT_DAY, strDays);
 		double all_money = _ttof(strPayDay) * _ttof(strDays)+money;
+
+		CString strDelMoney;
+		m_EditDel.GetWindowTextW(strDelMoney);
+		all_money -= _ttof(strDelMoney);
+
+		strMoney.Format(L"总计：%.04f", all_money);
+		SetDlgItemText(IDC_ALL,strMoney);
+	}
+	else if (type == DAYPAY_TYPE_DEL)
+	{
+		double all_money = 0;
+		int nSize = m_ListCtrl.m_ListLine.size();
+		for (int i = 0; i < nSize; i++)
+		{
+			all_money += m_ListCtrl.m_ListLine[i].money;
+		}
+
+		CString strPayDay,strDays,strMoney;
+		GetDlgItemText(IDC_EDIT_PER, strPayDay);
+		GetDlgItemText(IDC_EDIT_DAY, strDays);
+		all_money += _ttof(strPayDay) * _ttof(strDays);
+
+		all_money -= money;
+
 		strMoney.Format(L"总计：%.04f", all_money);
 		SetDlgItemText(IDC_ALL,strMoney);
 	}
@@ -681,7 +768,7 @@ void CDayCheckDlg::SetAllPayCtrl(DAYPAY_TYPE type, double money)
 
 void CDayCheckDlg::OnEnChangeEditPer()
 {
-	CString strPayDay, strDays;
+	/*CString strPayDay, strDays;
 	GetDlgItemText(IDC_EDIT_PER, strPayDay);
 	GetDlgItemText(IDC_EDIT_DAY, strDays);
 	double fPayDay = 0, fDays = 0;
@@ -690,13 +777,14 @@ void CDayCheckDlg::OnEnChangeEditPer()
 	double money = fPayDay * fDays;
 	CString  str;
 	str.Format(L"金额：%.02f", money);
-	SetDlgItemText(IDC_ZJ2, str);
-	SetAllPayCtrl(DAYPAY_TYPE_DAY,money);
+	SetDlgItemText(IDC_ZJ2, str);*/
+	//SetAllPayCtrl(DAYPAY_TYPE_DAY,money);
+	SetAllPayCtrl();
 }
 
 void CDayCheckDlg::OnEnChangeEditDay()
 {
-	CString strPayDay, strDays;
+	/*CString strPayDay, strDays;
 	GetDlgItemText(IDC_EDIT_PER, strPayDay);
 	GetDlgItemText(IDC_EDIT_DAY, strDays);
 	double fPayDay = 0, fDays = 0;
@@ -705,6 +793,13 @@ void CDayCheckDlg::OnEnChangeEditDay()
 	double money = fPayDay * fDays;
 	CString  str;
 	str.Format(L"金额：%.02f", money);
-	SetDlgItemText(IDC_ZJ2, str);
-	SetAllPayCtrl(DAYPAY_TYPE_DAY,money);
+	SetDlgItemText(IDC_ZJ2, str);*/
+	//SetAllPayCtrl(DAYPAY_TYPE_DAY,money);
+	SetAllPayCtrl();
+}
+
+
+void CDayCheckDlg::OnEnChangeEditDel()
+{
+	SetAllPayCtrl();
 }
