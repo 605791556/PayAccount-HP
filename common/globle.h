@@ -221,7 +221,7 @@ struct MONTH_PAY_STAFF
 {
     CString strStaffID;
     CString strStaffName;
-    vector<MONTHPAY_DAY> vDays;
+    list<MONTHPAY_DAY> vDays;
 };
 
 struct BOOK_STU

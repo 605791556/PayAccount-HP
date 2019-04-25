@@ -157,7 +157,7 @@ void CMonthCheckDlg::GetMonthPay(Json::Value root)
 					else
 					{
 						bool bInset=false;
-						vector <MONTHPAY_DAY>::iterator it;
+						list <MONTHPAY_DAY>::iterator it;
 						for ( it = staff.vDays.begin( ) ; it != staff.vDays.end( ) ; it++ )
 						{
 							if (day.ndex<(*it).ndex)
@@ -407,6 +407,24 @@ void CMonthCheckDlg::SetListValue(vector<MONTH_PAY_STAFF> vStaffs)
 	{
 		double allMoney = 0;
 		m_listCtrl.InsertItem(i, vStaffs[i].strStaffName);
+		for (auto it = vStaffs[i].vDays.begin();it!=vStaffs[i].vDays.end();it++)//天数循环
+		{
+			double money = 0;
+			for (int n = 0; n < it->v_daypay.size();n++)
+			{
+				if (it->v_daypay[n].type == DAYPAY_TYPE_DEL)
+					money -= _ttof(it->v_daypay[n].money);
+				else
+					money += _ttof(it->v_daypay[n].money);
+			}
+			allMoney += money;
+			strTmp.Format(L"%.2lf", money);
+			if (money == 0)
+				m_listCtrl.SetItemText(i, it->ndex, L"");
+			else
+				m_listCtrl.SetItemText(i, it->ndex, strTmp);
+		}
+		/*
 		for (int j = 0; j < vStaffs[i].vDays.size();j++)//天数循环
 		{
 			double money = 0;
@@ -424,6 +442,7 @@ void CMonthCheckDlg::SetListValue(vector<MONTH_PAY_STAFF> vStaffs)
 			else
 			    m_listCtrl.SetItemText(i, vStaffs[i].vDays[j].ndex, strTmp);
 		}
+		*/
 		fTotal+=allMoney;
 		strTmp.Format(L"%.2lf", allMoney);
 		m_listCtrl.SetItemText(i, 1, strTmp);
