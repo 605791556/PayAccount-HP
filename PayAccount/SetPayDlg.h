@@ -3,7 +3,7 @@
 #include "afxcmn.h"
 
 
-// CSetPayDlg 对话框
+// CSetPayDlg  对话框
 
 class CDaiNumberPayDlg;
 class CZheYeDlg;
