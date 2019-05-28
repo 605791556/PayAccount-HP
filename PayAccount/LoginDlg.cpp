@@ -272,6 +272,10 @@ void CLoginDlg::OnCbnEditchangeUser()
 
 void CLoginDlg::OnStnClickedStabtn()
 {
+	Json::Value v;
+	v.resize(0);
+	std::string s = v.toStyledString();
+	
 	CSetAdressDlg dlg;
 	if(dlg.DoModal() == IDOK)
 	{
