@@ -6,7 +6,7 @@
 #include "AddBookDlg.h"
 
 
-// CAddBookDlg 对话框
+// CAddBookDlg  对话框
 
 IMPLEMENT_DYNAMIC(CAddBookDlg, CDialog)
 
