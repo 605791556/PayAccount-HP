@@ -27,6 +27,7 @@ public:
 	enum { IDD = IDD_DETAIL };
 
 protected:
+	virtual BOOL PreTranslateMessage(MSG* pMsg);
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV Ö§³Ö
 	virtual BOOL OnInitDialog();
 	afx_msg LRESULT OnCallBack(WPARAM wParam, LPARAM lParam);

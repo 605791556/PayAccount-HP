@@ -2482,6 +2482,32 @@ bool CDbData::_GetMouthPay(Json::Value& js,Json::Value root,DWORD& time)
 			Json::Value one1;
 			one1[MPAYMSG[EM_GET_MPAY_STAFFID]]=T2A(staff.strStaffID);
 			one1[MPAYMSG[EM_GET_MPAY_STAFFNAME]]=T2A(staff.strStaffName);
+
+			for (auto it = staff.vDays.begin();it!=staff.vDays.end();it++)
+			{
+				MONTHPAY_DAY day = *it;
+				Json::Value one2;
+				one2[MPAYMSG[EM_GET_MPAY_DEX]]=day.ndex;
+
+				sqlite3_reset(stmt);
+				sqlite3_bind_text(stmt,1,W2A(staff.strStaffID),-1,SQLITE_STATIC);
+				sqlite3_bind_text(stmt,2,W2A(day.strDate),-1,SQLITE_STATIC);
+
+				if (result == SQLITE_OK)
+				{
+					bret=true;
+					while (sqlite3_step(stmt) == SQLITE_ROW)
+					{
+						Json::Value one3;
+						CString str;
+						one3[MPAYMSG[EM_GET_MPAY_TYPE]] = sqlite3_column_int(stmt, 0);
+						one3[MPAYMSG[EM_GET_MPAY_MONEY]] = (char*)sqlite3_column_text(stmt, 1);
+						one2[CMD_RetType[EM_CMD_RETYPE_VALUE]].append(one3);
+					}
+				}
+				one1[CMD_RetType[EM_CMD_RETYPE_VALUE]].append(one2);
+			}
+			/*
 			for (int j=0;j<staff.vDays.size();j++)
 			{
 				MONTHPAY_DAY day = staff.vDays[j];
@@ -2506,11 +2532,55 @@ bool CDbData::_GetMouthPay(Json::Value& js,Json::Value root,DWORD& time)
 				}
 				one1[CMD_RetType[EM_CMD_RETYPE_VALUE]].append(one2);
 			}
+			*/
 			js[CMD_RetType[EM_CMD_RETYPE_VALUE]].append(one1);
 		}
 		sqlite3_finalize(stmt);
 		sqlite3_exec(m_sqlite, "commit transaction", 0, 0, NULL);
 
+		DWORD t2=GetTickCount();
+		time = t2-t1;
+	}
+	catch (...)
+	{
+		bret=false;
+	}
+	return bret;
+}
+
+bool CDbData::_GetMouthPay2(Json::Value& js,Json::Value root,DWORD& time)
+{
+	bool bret=false;
+	char sql[MAX_PATH];
+	USES_CONVERSION;
+	try
+	{
+		CString strDate;
+		DWORD t1=GetTickCount();
+		strDate = root[MPAYMSG[EM_GET_MPAY_DATE]].asCString();
+		sprintf(sql, "SELECT staff.staffID,staff.name,day_pay.pay_type,day_pay.money,day_pay.date FROM staff,day_pay WHERE staff.staffID = day_pay.staffID AND day_pay.date like '%s%%'",W2A(strDate));
+		sqlite3_stmt *stmt = NULL;
+		int result = sqlite3_prepare_v2(m_sqlite, sql, -1, &stmt, NULL);
+		if (result == SQLITE_OK)
+		{
+			bret=true;
+			while (sqlite3_step(stmt) == SQLITE_ROW)
+			{
+				Json::Value one;
+				CString str;
+				one[MPAYMSG[EM_GET_MPAY_STAFFID]] = (char*)sqlite3_column_text(stmt, 0);
+
+				const char* tmp = (const char*)sqlite3_column_text(stmt, 1);
+				one[MPAYMSG[EM_GET_MPAY_STAFFNAME]]=g_Globle.UTF8ToEncode(tmp);
+
+				one[MPAYMSG[EM_GET_MPAY_TYPE]] = sqlite3_column_int(stmt, 2);
+				one[MPAYMSG[EM_GET_MPAY_MONEY]] = (char*)sqlite3_column_text(stmt, 3);
+				one[MPAYMSG[EM_GET_MPAY_DATE]] = (char*)sqlite3_column_text(stmt, 4);
+				js[CMD_RetType[EM_CMD_RETYPE_VALUE]].append(one);
+			}
+		}
+
+		sqlite3_finalize(stmt);
 		DWORD t2=GetTickCount();
 		time = t2-t1;
 	}

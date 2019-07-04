@@ -144,6 +144,14 @@ void CWorkCalDlg::UpdateDlg()
 	SendToGetStaff();
 }
 
+BOOL CWorkCalDlg::PreTranslateMessage(MSG* pMsg)
+{
+	if(pMsg->message==WM_KEYDOWN && pMsg->wParam==VK_ESCAPE)
+		return TRUE;
+	if (pMsg->message==WM_KEYDOWN && pMsg->wParam==VK_RETURN)
+		return TRUE;
+	return CDialog::PreTranslateMessage(pMsg);
+}
 
 BOOL CWorkCalDlg::OnInitDialog()
 {

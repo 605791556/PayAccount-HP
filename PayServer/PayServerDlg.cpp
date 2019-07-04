@@ -850,7 +850,7 @@ void CPayServerDlg::DoRun(string strData,Json::Value& js,TPkgInfo* pInfo)
 		case SOCK_CMD_GET_MPAY:
 			{
 				DWORD time=0;
-				bRet=theApp.m_dbData->_GetMouthPay(js,root,time);
+				bRet=theApp.m_dbData->_GetMouthPay2(js,root,time);
 			}
 			break;
 		case SOCK_CMD_DEL_DAYPAY:

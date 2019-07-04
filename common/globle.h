@@ -212,9 +212,14 @@ struct OTHER_PRO_PAY
 
 struct MONTHPAY_DAY
 {
-	vector<DAYPAY> v_daypay;
     CString strDate;
     int ndex;
+    double d_money;
+
+    MONTHPAY_DAY()
+    {
+	    d_money = 0;
+	}
 };
 
 struct MONTH_PAY_STAFF
@@ -222,6 +227,18 @@ struct MONTH_PAY_STAFF
     CString strStaffID;
     CString strStaffName;
     list<MONTHPAY_DAY> vDays;
+    double m_money;
+
+    MONTH_PAY_STAFF()
+    {
+	    m_money = 0;
+    }
+    
+   void resetValue()
+   {
+        vDays.clear();
+	    m_money = 0;
+   }
 };
 
 struct BOOK_STU

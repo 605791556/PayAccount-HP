@@ -18,6 +18,7 @@ public:
 	enum { IDD = IDD_PROCESS };
 
 protected:
+	virtual BOOL PreTranslateMessage(MSG* pMsg);
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV Ö§³Ö
 	virtual BOOL OnInitDialog();
 	DECLARE_MESSAGE_MAP()

@@ -83,6 +83,20 @@ CMonthCheckDlg::~CMonthCheckDlg()
 {
 }
 
+BOOL CMonthCheckDlg::PreTranslateMessage(MSG* pMsg)
+{ 
+	// TODO: 在此添加专用代码和/或调用基类
+	if(pMsg->message==WM_KEYDOWN && pMsg->wParam==VK_ESCAPE)
+	{	
+		return TRUE;
+	}
+	if (pMsg->message==WM_KEYDOWN && pMsg->wParam==VK_RETURN)
+	{
+		return TRUE;
+	}
+	return CDialog::PreTranslateMessage(pMsg);
+}
+
 void CMonthCheckDlg::SendToGetStaff()
 {
 	USES_CONVERSION;
@@ -96,6 +110,7 @@ void CMonthCheckDlg::SendToGetStaff()
 void CMonthCheckDlg::GetStaff(Json::Value root)
 {
 	m_vet.clear();
+	m_vStaffs.clear();
 	if (root.isMember(CMD_RetType[EM_CMD_RETYPE_VALUE]))
 	{
 		Json:: Value js = root[CMD_RetType[EM_CMD_RETYPE_VALUE]];
@@ -108,74 +123,131 @@ void CMonthCheckDlg::GetStaff(Json::Value root)
 				stu.strname = js[i][CMD_STAFFMSG[EM_STAFF_MSG_NAME]].asCString();
 				stu.strStaffID = js[i][CMD_STAFFMSG[EM_STAFF_MSG_STAFFID]].asCString();
 				m_vet.push_back(stu);
+
+				MONTH_PAY_STAFF staff;
+				staff.strStaffName = js[i][CMD_STAFFMSG[EM_STAFF_MSG_NAME]].asCString();
+				staff.strStaffID = js[i][CMD_STAFFMSG[EM_STAFF_MSG_STAFFID]].asCString();
+				m_vStaffs.push_back(staff);
 			}
 		}
 	}
 }
 
+int findDay(CString strDate)
+{
+	int nfind = strDate.ReverseFind('/');
+	CString str = strDate.Mid(nfind+1,2);
+	return _ttoi(str);
+}
+
 void CMonthCheckDlg::GetMonthPay(Json::Value root)
 {
+	InitListCtrl();
+	for (auto it = m_vStaffs.begin();it!=m_vStaffs.end();it++)
+		it->resetValue();
+
 	Json::FastWriter writer;  
 	string strData = writer.write(root);
 
-	vector<MONTH_PAY_STAFF> vStaffs;
 	if (root.isMember(CMD_RetType[EM_CMD_RETYPE_VALUE]))
 	{
-		Json::Value ones1 = root[CMD_RetType[EM_CMD_RETYPE_VALUE]];
-		int nsize1 = ones1.size();
-		for (int i=0;i<nsize1;i++)//职工循环
+		Json::Value js = root[CMD_RetType[EM_CMD_RETYPE_VALUE]];
+		int size = js.size();
+		for (int i=0;i<size;i++)
 		{
-			Json::Value one1 = ones1[i];
+			Json::Value one = js[i];
+			
 			MONTH_PAY_STAFF staff;
-			staff.strStaffID = one1[MPAYMSG[EM_GET_MPAY_STAFFID]].asCString();
-			staff.strStaffName = one1[MPAYMSG[EM_GET_MPAY_STAFFNAME]].asCString();
-			if (one1.isMember(CMD_RetType[EM_CMD_RETYPE_VALUE]))
+			staff.strStaffID = one[MPAYMSG[EM_GET_MPAY_STAFFID]].asCString();
+			staff.strStaffName = one[MPAYMSG[EM_GET_MPAY_STAFFNAME]].asCString();
+
+			MONTHPAY_DAY day;
+			day.strDate = one[MPAYMSG[EM_GET_MPAY_DATE]].asCString();
+			day.ndex = findDay(day.strDate)+1;
+
+			DAYPAY day_pay;
+			day_pay.type = (DAYPAY_TYPE)one[MPAYMSG[EM_GET_MPAY_TYPE]].asInt();
+			day_pay.money = one[MPAYMSG[EM_GET_MPAY_MONEY]].asCString();
+
+			for (int j = 0;j<m_vStaffs.size();j++)
 			{
-				Json::Value ones2 = one1[CMD_RetType[EM_CMD_RETYPE_VALUE]];
-				int nsize2 = ones2.size();
-				for (int j=0;j<nsize2;j++)//日期循环
+				if (m_vStaffs[j].strStaffID == staff.strStaffID)
 				{
-					Json::Value one2 = ones2[j];
-					MONTHPAY_DAY day;
-					day.ndex = one2[MPAYMSG[EM_GET_MPAY_DEX]].asInt();
-					if (one2.isMember(CMD_RetType[EM_CMD_RETYPE_VALUE]))
+					CString strDate;
+					strDate = one[MPAYMSG[EM_GET_MPAY_DATE]].asCString();
+
+					if (m_vStaffs[j].vDays.size() == 0)
 					{
-						Json::Value ones3 = one2[CMD_RetType[EM_CMD_RETYPE_VALUE]];
-						int nsize3 = ones3.size();
-						for (int k=0;k<nsize3;k++)//日做工循环
+						if (day_pay.type == DAYPAY_TYPE_DEL)
 						{
-							Json::Value one3 = ones3[k];
-							DAYPAY day_pay;
-							day_pay.type = (DAYPAY_TYPE)one3[MPAYMSG[EM_GET_MPAY_TYPE]].asInt();
-							day_pay.money = one3[MPAYMSG[EM_GET_MPAY_MONEY]].asCString();
-							day.v_daypay.push_back(day_pay);
+							day.d_money -= _ttof(day_pay.money);
+							m_vStaffs[j].m_money -= _ttof(day_pay.money);
 						}
+						else
+						{
+							day.d_money += _ttof(day_pay.money);
+							m_vStaffs[j].m_money += _ttof(day_pay.money);
+						}
+
+						m_vStaffs[j].vDays.push_back(day);
 					}
-					//按ndex从小到大排列
-					if(staff.vDays.size() == 0)
-						staff.vDays.push_back(day);
 					else
 					{
-						bool bInset=false;
-						list <MONTHPAY_DAY>::iterator it;
-						for ( it = staff.vDays.begin( ) ; it != staff.vDays.end( ) ; it++ )
+						bool bInsert = false;
+						for (auto it = m_vStaffs[j].vDays.begin();it != m_vStaffs[j].vDays.end();it++)
 						{
-							if (day.ndex<(*it).ndex)
+							if (it->strDate == strDate)//该日期已经插入
 							{
-								bInset = true;
-								staff.vDays.insert(it,day);
+								bInsert = true;
+								if (day_pay.type == DAYPAY_TYPE_DEL)
+								{
+									it->d_money -= _ttof(day_pay.money);
+									m_vStaffs[j].m_money -= _ttof(day_pay.money);
+								}
+								else
+								{
+									it->d_money += _ttof(day_pay.money);
+									m_vStaffs[j].m_money += _ttof(day_pay.money);
+								}
 								break;
 							}
 						}
-						if(!bInset)
-							staff.vDays.push_back(day);
+						if (bInsert == false)//该日期还没插入
+						{
+							if (day_pay.type == DAYPAY_TYPE_DEL)
+							{
+								day.d_money -= _ttof(day_pay.money);
+								m_vStaffs[j].m_money -= _ttof(day_pay.money);
+							}
+							else
+							{
+								day.d_money += _ttof(day_pay.money);
+								m_vStaffs[j].m_money += _ttof(day_pay.money);
+							}
+
+							m_vStaffs[j].vDays.push_back(day);
+						}
 					}
+					break;
 				}
 			}
-			vStaffs.push_back(staff);
 		}
 	}
-	SetListValue(vStaffs);
+
+	double fTotal = 0;
+	for (int i=0;i<m_vStaffs.size();i++)
+		fTotal+=m_vStaffs[i].m_money;
+
+	CString tmp;
+	tmp.Format(L"总支出：%.02f",fTotal);
+	SetDlgItemText(IDC_TOTAL,tmp);
+
+	m_comboMonth.EnableWindow(TRUE);
+	GetDlgItem(IDC_BTN_UPDATE)->EnableWindow(TRUE);
+	m_staw.ShowWindow(SW_HIDE);
+	m_listCtrl.ShowWindow(SW_SHOW);
+
+	m_listCtrl.SetItemCount(m_vStaffs.size());
 }
 
 void CMonthCheckDlg::SendToGetMonthPay()
@@ -190,29 +262,10 @@ void CMonthCheckDlg::SendToGetMonthPay()
 
 	int nYear = _ttoi(strYear);
 	int nMonth = _ttoi(strMonth);
-	int nDays = g_Globle.GetDays(nYear, nMonth);
 
-	int nSize = m_vet.size();
-	if (nSize>0 && nDays>0)
-	{
-		for (int i = 0; i < nSize;i++)
-		{
-			Json::Value one1;
-			one1[MPAYMSG[EM_GET_MPAY_STAFFID]]=T2A(m_vet[i].strStaffID);
-			one1[MPAYMSG[EM_GET_MPAY_STAFFNAME]]=T2A(m_vet[i].strname);
-			for (int j = 0; j < nDays;j++)
-			{
-				strDate = strYear + "//" + strMonth;
-				strDate.Format(L"%s/%s/%02d", strYear, strMonth, j + 1);
+	strDate.Format(L"%s/%s", strYear, strMonth);
+	root[MPAYMSG[EM_GET_MPAY_DATE]]=T2A(strDate);
 
-				Json::Value one2;
-				one2[MPAYMSG[EM_GET_MPAY_DATE]]=T2A(strDate);
-				one2[MPAYMSG[EM_GET_MPAY_DEX]]=j+2;
-				one1[CMD_RetType[EM_CMD_RETYPE_VALUE]].append(one2);
-			}
-			root[CMD_RetType[EM_CMD_RETYPE_VALUE]].append(one1);
-		}
-	}
 	Json::FastWriter writer;  
 	string temp = writer.write(root);
 	if(g_Globle.SendTo(temp) != 0)
@@ -275,6 +328,7 @@ void CMonthCheckDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_COMBO_MONTH, m_comboMonth);
 	DDX_Control(pDX, IDC_TOTAL, m_total);
 	DDX_Control(pDX, IDC_STAW, m_staw);
+	DDX_Control(pDX, IDC_EDIT_KEYWORD, m_keywordCtrl);
 }
 
 
@@ -284,6 +338,9 @@ BEGIN_MESSAGE_MAP(CMonthCheckDlg, CPayAccountDlg)
 	ON_CBN_SELCHANGE(IDC_COMBO_MONTH, &CMonthCheckDlg::OnCbnSelchangeComboMonth)
 	ON_BN_CLICKED(IDC_BTN_UPDATE, &CMonthCheckDlg::OnBnClickedBtnUpdate)
 	ON_MESSAGE(WM_MONTHCHECK_CALL, &CMonthCheckDlg::OnCallBack)
+	ON_NOTIFY(LVN_GETDISPINFO, IDC_LIST1, &CMonthCheckDlg::OnLvnGetdispinfoList1)
+	ON_NOTIFY(LVN_ODFINDITEM, IDC_LIST1, &CMonthCheckDlg::OnLvnOdfinditemList1)
+	ON_EN_CHANGE(IDC_EDIT_KEYWORD, &CMonthCheckDlg::OnEnChangeEditKeyword)
 END_MESSAGE_MAP()
 
 
@@ -350,9 +407,10 @@ void CMonthCheckDlg::SetListFontSize()
 	font1.Detach();
 }
 
-void CMonthCheckDlg::SetListValue(vector<MONTH_PAY_STAFF> vStaffs)
+void CMonthCheckDlg::InitListCtrl()
 {
-	CString strYear, strMonth,strDate,strTmp;
+	USES_CONVERSION;
+	CString strYear, strMonth,strDate;
 	m_comboYear.GetLBText(m_comboYear.GetCurSel(), strYear);
 	m_comboMonth.GetLBText(m_comboMonth.GetCurSel(), strMonth);
 
@@ -383,10 +441,9 @@ void CMonthCheckDlg::SetListValue(vector<MONTH_PAY_STAFF> vStaffs)
 		}
 		else
 		{
-			TCHAR a[10] = {0};
-			_itot(i-1, a, 10);
-			lvcolumn.pszText = a;
-
+			CString strr;
+			strr.Format(L"%02d",i-1);
+			lvcolumn.pszText = (LPWSTR)(LPCTSTR)strr;
 		}
 		lvcolumn.iSubItem = i;
 		lvcolumn.iOrder = i;
@@ -400,61 +457,6 @@ void CMonthCheckDlg::SetListValue(vector<MONTH_PAY_STAFF> vStaffs)
 	CImageList imagelist;
 	imagelist.Create(1, 20, ILC_COLOR, 1, 1);
 	m_listCtrl.SetImageList(&imagelist, LVSIL_SMALL);
-
-	double fTotal = 0;
-	int nSize = vStaffs.size();
-	for (int i = 0; i < nSize;i++)//职工循环
-	{
-		double allMoney = 0;
-		m_listCtrl.InsertItem(i, vStaffs[i].strStaffName);
-		for (auto it = vStaffs[i].vDays.begin();it!=vStaffs[i].vDays.end();it++)//天数循环
-		{
-			double money = 0;
-			for (int n = 0; n < it->v_daypay.size();n++)
-			{
-				if (it->v_daypay[n].type == DAYPAY_TYPE_DEL)
-					money -= _ttof(it->v_daypay[n].money);
-				else
-					money += _ttof(it->v_daypay[n].money);
-			}
-			allMoney += money;
-			strTmp.Format(L"%.2lf", money);
-			if (money == 0)
-				m_listCtrl.SetItemText(i, it->ndex, L"");
-			else
-				m_listCtrl.SetItemText(i, it->ndex, strTmp);
-		}
-		/*
-		for (int j = 0; j < vStaffs[i].vDays.size();j++)//天数循环
-		{
-			double money = 0;
-			for (int n = 0; n < vStaffs[i].vDays[j].v_daypay.size();n++)
-			{
-				if (vStaffs[i].vDays[j].v_daypay[n].type == DAYPAY_TYPE_DEL)
-					money -= _ttof(vStaffs[i].vDays[j].v_daypay[n].money);
-				else
-				    money += _ttof(vStaffs[i].vDays[j].v_daypay[n].money);
-			}
-			allMoney += money;
-			strTmp.Format(L"%.2lf", money);
-			if (money == 0)
-				m_listCtrl.SetItemText(i, vStaffs[i].vDays[j].ndex, L"");
-			else
-			    m_listCtrl.SetItemText(i, vStaffs[i].vDays[j].ndex, strTmp);
-		}
-		*/
-		fTotal+=allMoney;
-		strTmp.Format(L"%.2lf", allMoney);
-		m_listCtrl.SetItemText(i, 1, strTmp);
-	}
-	CString tmp;
-	tmp.Format(L"总支出：%.02f",fTotal);
-	SetDlgItemText(IDC_TOTAL,tmp);
-
-	m_comboMonth.EnableWindow(TRUE);
-	GetDlgItem(IDC_BTN_UPDATE)->EnableWindow(TRUE);
-	m_staw.ShowWindow(SW_HIDE);
-	m_listCtrl.ShowWindow(SW_SHOW);
 }
 
 void CMonthCheckDlg::OnCbnSelchangeComboYear()
@@ -474,5 +476,98 @@ void CMonthCheckDlg::OnCbnSelchangeComboMonth()
 void CMonthCheckDlg::OnBnClickedBtnUpdate()
 {
 	// TODO:  在此添加控件通知处理程序代码
+	m_keywordCtrl.SetWindowTextW(L"");
 	SendToGetStaff();
+}
+
+
+void CMonthCheckDlg::OnLvnGetdispinfoList1(NMHDR *pNMHDR, LRESULT *pResult)
+{
+	CString strTmp;
+	LV_DISPINFO* pDispInfo = (LV_DISPINFO*)pNMHDR;
+	LV_ITEM* pItem= &(pDispInfo)->item;
+
+	int row= pItem->iItem;//行
+	int column = pItem->iSubItem;//列
+
+	if (pItem->mask & LVIF_TEXT)
+	{
+		if (column == 0)//姓名
+		{
+			lstrcpy(pItem->pszText,m_vStaffs[row].strStaffName);
+		}
+		else if (column == 1)//总额
+		{
+			strTmp.Format(L"%.2lf",  m_vStaffs[row].m_money);
+			lstrcpy(pItem->pszText,strTmp);
+		}
+		else
+		{
+			double money = 0;
+			for (auto it = m_vStaffs[row].vDays.begin();it!= m_vStaffs[row].vDays.end();it++)
+			{
+				if (it->ndex == column)
+				{
+					strTmp.Format(L"%.2lf", it->d_money);
+					lstrcpy(pItem->pszText,strTmp);
+					break;
+				}
+			}
+		}
+	}
+	*pResult = 0;
+}
+
+
+void CMonthCheckDlg::OnLvnOdfinditemList1(NMHDR *pNMHDR, LRESULT *pResult)
+{
+	LPNMLVFINDITEM pFindInfo = reinterpret_cast<LPNMLVFINDITEM>(pNMHDR);
+	*pResult =-1;
+
+	if( (pFindInfo->lvfi.flags & LVFI_STRING) == 0 )
+		return;
+
+	CString strFind = pFindInfo->lvfi.psz;
+	if (strFind.IsEmpty()) return;
+
+	//判断是否最后一行
+	int nItemCount = m_listCtrl.GetItemCount();
+	if(nItemCount == 0) return;
+	int currentPos=0;
+
+
+	//开始查找
+	do
+	{
+		int nFind = m_vStaffs[currentPos].strStaffName.Find(strFind);
+		if (nFind == 0)
+		{
+			*pResult = currentPos;
+			m_vItem.push_back(currentPos);
+		}
+		currentPos++;
+
+	}while(currentPos < nItemCount);
+}
+
+void CMonthCheckDlg::OnEnChangeEditKeyword()
+{
+	m_vItem.clear();
+	int nItemCount = m_listCtrl.GetItemCount();
+	m_listCtrl.SetItemState(-1,0,-1);
+
+	CString strKeyWord;
+	m_keywordCtrl.GetWindowTextW(strKeyWord);
+
+	LVFINDINFO info;
+	info.flags = LVFI_PARTIAL|LVFI_STRING;
+	info.psz = strKeyWord;
+	int n = m_listCtrl.FindItem(&info);
+	if (n > 0)
+	{
+		for (int i=0;i<m_vItem.size();i++)
+		{
+			m_listCtrl.SetItemState(m_vItem[i],LVNI_FOCUSED | LVIS_SELECTED, LVNI_FOCUSED | LVIS_SELECTED);
+		}
+	}
 }

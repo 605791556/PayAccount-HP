@@ -104,7 +104,7 @@ public:
 
 	//月核算
 	bool _GetMouthPay(Json::Value& js,Json::Value root,DWORD& time);
-
+	bool _GetMouthPay2(Json::Value& js,Json::Value root,DWORD& time);
 	//明细
 	bool _GetDetails(Json::Value& root,vector<PROJECT_STU> vProIDs,CString strBookID);
 	//进度

@@ -21,6 +21,7 @@ public:
 	enum { IDD = IDD_MPAY };
 
 protected:
+	virtual BOOL PreTranslateMessage(MSG* pMsg);
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV 支持
 	afx_msg LRESULT OnCallBack(WPARAM wParam, LPARAM lParam);
 	DECLARE_MESSAGE_MAP()
@@ -33,8 +34,10 @@ public:
 	CComboBox m_comboYear;
 	CComboBox m_comboMonth;
 	vector<STAFF_STU> m_vet;
+	vector<MONTH_PAY_STAFF> m_vStaffs;
+	vector<int>  m_vItem;//高亮选中行
 	virtual BOOL OnInitDialog();
-	void SetListValue(vector<MONTH_PAY_STAFF> vStaffs);
+	void InitListCtrl();
 	afx_msg void OnCbnSelchangeComboYear();
 	afx_msg void OnCbnSelchangeComboMonth();
 	afx_msg void OnBnClickedBtnUpdate();
@@ -45,4 +48,8 @@ public:
 	CStatic m_total;
 	CFont m_font;
 	CStatic m_staw;
+	afx_msg void OnLvnGetdispinfoList1(NMHDR *pNMHDR, LRESULT *pResult);
+	afx_msg void OnLvnOdfinditemList1(NMHDR *pNMHDR, LRESULT *pResult);
+	CEdit m_keywordCtrl;
+	afx_msg void OnEnChangeEditKeyword();
 };

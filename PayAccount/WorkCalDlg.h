@@ -35,6 +35,7 @@ public:
 	enum { IDD = IDD_WORKCAL };
 
 protected:
+	virtual BOOL PreTranslateMessage(MSG* pMsg);
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV Ö§³Ö
 	afx_msg LRESULT OnCallBack(WPARAM wParam, LPARAM lParam);
 	DECLARE_MESSAGE_MAP()
