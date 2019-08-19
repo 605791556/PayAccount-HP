@@ -502,7 +502,7 @@ void CDayCheckDlg::SetListCtrlValue()
 			m_ListCtrl.SetItemText(ndex, 1, strVdex);//项目
 			m_ListCtrl.SetItemText(ndex, 2, strVdex);//图书
 			m_ListCtrl.SetItemText(ndex, 3, m_vCal[i].pay);//单价
-			str.Format(L"%.1f", m_vCal[i].number);
+			str.Format(L"%.2f", m_vCal[i].number);
 			m_ListCtrl.SetItemText(ndex, 4, str);//件数
 			m_ListCtrl.SetItemText(ndex, 5, m_vCal[i].money);//金额
 			str.Format(L"%d", m_vCal[i].id);

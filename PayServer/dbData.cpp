@@ -2260,7 +2260,7 @@ bool CDbData::AddDayPay(CString strStaffID, vector<DAYPAY> vec, CString strDate)
 			}
 			else if (vec[i].type == DAYPAY_TYPE_JIJIAN)
 			{
-				sprintf(stmp, "INSERT INTO day_pay(staffID,pay_type,proID,bookID,pay,number,money,date,proName,bookName) VALUES('%s','%d','%d','%s','%s','%.1f','%s','%s','%s','%s');",
+				sprintf(stmp, "INSERT INTO day_pay(staffID,pay_type,proID,bookID,pay,number,money,date,proName,bookName) VALUES('%s','%d','%d','%s','%s','%.2f','%s','%s','%s','%s');",
 					W2A(strStaffID), (int)vec[i].type, vec[i].proID, W2A(vec[i].strBookID), W2A(vec[i].pay), vec[i].number, W2A(vec[i].money), W2A(strDate),
 					g_Globle.EncodeToUTF8(W2A(vec[i].strProName) ),
 					g_Globle.EncodeToUTF8(W2A(vec[i].strBookName)));

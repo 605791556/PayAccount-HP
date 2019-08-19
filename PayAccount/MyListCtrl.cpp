@@ -73,8 +73,8 @@ BOOL CMyListCtrl::OnInitDialog()
 		InsertColumn(i, &lvcolumn);
 	}
 	SetExtendedStyle(LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES);
-	SetBkColor(RGB(102, 205, 170));
-	SetTextBkColor(RGB(102, 205, 170));
+	SetBkColor(RGB(190 ,190, 190));
+	SetTextBkColor(RGB(190, 190, 190));
 
 	CImageList imagelist;
 	imagelist.Create(1, 25, ILC_COLOR, 1, 1);
@@ -201,7 +201,7 @@ LRESULT CMyListCtrl::DefWindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 			rectItem.top += 2;
 			rectItem.right -= 2;
 			rectItem.bottom -= 2;
-			m_ListLine[nItem].pEdit->Create(WS_CHILD | WS_VISIBLE | WS_TABSTOP | WS_BORDER | ES_CENTER, rectItem, this, IDC_COMBOBOX + (++m_aDex));
+			m_ListLine[nItem].pEdit->Create(WS_CHILD | WS_VISIBLE | WS_TABSTOP  | ES_CENTER, rectItem, this, IDC_COMBOBOX + (++m_aDex));
 			m_ListLine[nItem].nEidtID = IDC_COMBOBOX + m_aDex;
 			m_ListLine[nItem].pEdit->SetWindowText(pItem->pszText);
 		}
