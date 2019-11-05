@@ -193,8 +193,8 @@ void CWorkCalDlg::InitListCtrl()
 		m_ListCtrl.InsertColumn(i, &lvcolumn);
 	}
 	m_ListCtrl.SetExtendedStyle(LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES);
-	m_ListCtrl.SetBkColor(RGB(102 ,205 ,170));
-	m_ListCtrl.SetTextBkColor(RGB(102 ,205, 170)); 
+	m_ListCtrl.SetBkColor(RGB(205, 205, 180));
+	m_ListCtrl.SetTextBkColor(RGB(205, 205, 180)); 
 }
 
 void CWorkCalDlg::SetListFontSize()
@@ -290,9 +290,6 @@ void CWorkCalDlg::SendToGetOnePayList()
 	CString strDate = t.Format(L"%Y/%m/%d");
 
 	USES_CONVERSION;
-	Json::Value root;
-	root[CONNECT_CMD]=SOCK_CMD_GET_MPAY;
-
 
 	int nSize = m_vet.size();
 	if (nSize>0)

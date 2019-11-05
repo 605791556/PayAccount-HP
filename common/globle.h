@@ -20,7 +20,6 @@ using namespace std;
 #define ZZ_SWAP_4BYTE(L) ((ZZ_SWAP_2BYTE ((L) & 0xFFFF) << 16) | ZZ_SWAP_2BYTE(((L) >> 16) & 0xFFFF))
 #define ZZ_SWAP_8BYTE(L) ((ZZ_SWAP_4BYTE (((uint64_t)(L)) & 0xFFFFFFFF) << 32) | ZZ_SWAP_4BYTE((((uint64_t)(L)) >> 32) & 0xFFFFFFFF))
 
-
 enum NET_STATE
 {
 	NET_STATE_OK,//服务正常

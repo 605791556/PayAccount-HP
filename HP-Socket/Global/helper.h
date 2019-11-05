@@ -99,6 +99,7 @@ struct TPkgInfo
 	~TPkgInfo() {}
 };
 
+
 CBufferPtr* GeneratePkgBuffer(DWORD seq, LPCTSTR lpszName, short age, LPCTSTR lpszDesc);
 CBufferPtr* GeneratePkgBuffer(const TPkgHeader& header, const TPkgBody& body);
 

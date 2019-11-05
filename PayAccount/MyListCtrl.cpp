@@ -174,8 +174,8 @@ LRESULT CMyListCtrl::DefWindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 			rectItem.left += 2;
 			rectItem.top += 0;
 			rectItem.right -= 2;
-			rectItem.bottom += 150;
-			m_ListLine[nItem].pComboProject->Create(CBS_DROPDOWNLIST | CBS_DISABLENOSCROLL | WS_VSCROLL, rectItem, this, IDC_COMBOBOX + (++m_aDex));
+
+			m_ListLine[nItem].pComboProject->Create(CBS_DROPDOWNLIST  | CBS_DISABLENOSCROLL | WS_VSCROLL, rectItem, this, IDC_COMBOBOX + (++m_aDex));
 			m_ListLine[nItem].nComboxProID = IDC_COMBOBOX + m_aDex;
 			m_ListLine[nItem].pComboProject->ShowWindow(SW_SHOW);
 			SetComboProjectValue(m_ListLine[nItem].pComboProject, pItem->pszText);
@@ -185,7 +185,6 @@ LRESULT CMyListCtrl::DefWindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 			rectItem.left += 2;
 			rectItem.top += 0;
 			rectItem.right -= 2;
-			rectItem.bottom += 180;
 			m_ListLine[nItem].pComboBook->Create(CBS_DROPDOWNLIST | CBS_DISABLENOSCROLL | WS_VSCROLL, rectItem, this, IDC_COMBOBOX + (++m_aDex));
 			m_ListLine[nItem].nComboxBookID = IDC_COMBOBOX + m_aDex;
 			m_ListLine[nItem].pComboBook->ShowWindow(SW_SHOW);

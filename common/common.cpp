@@ -46,6 +46,11 @@ const char CMD_DELBOOK[EM_DEL_BOOK_MAX][CMD_CHAR_MAX]=
 	"id"
 };
 
+const char CMD_RKBOOK[EM_RK_BOOK_MAX][CMD_CHAR_MAX]=
+{
+	"id"
+};
+
 const char CMD_JUDGEBOOK[EM_JUDGE_BOOK_MAX][CMD_CHAR_MAX]=
 {
 	"name",

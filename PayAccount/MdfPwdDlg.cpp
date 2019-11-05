@@ -28,21 +28,6 @@ void MdfPwdCallback(void* p,string strData)
 	}
 }
 
-CMdfPwdDlg::CMdfPwdDlg(CWnd* pParent /*=NULL*/)
-	: CDialogEx(CMdfPwdDlg::IDD, pParent)
-{
-	m_edit_old_pass.m_type = EDIT_TYPE_NO_CHN;
-	m_edit_new_pass.m_type = EDIT_TYPE_NO_CHN;
-	m_edit_new_pass2.m_type = EDIT_TYPE_NO_CHN;
-
-	//设置回调
-	g_Globle.SetCallback(MdfPwdCallback,this);
-}
-
-CMdfPwdDlg::~CMdfPwdDlg()
-{
-}
-
 LRESULT CMdfPwdDlg::OnCallBack(WPARAM wParam, LPARAM lParam)
 {
 	string* pStrData = (string*)lParam;
@@ -72,6 +57,21 @@ LRESULT CMdfPwdDlg::OnCallBack(WPARAM wParam, LPARAM lParam)
 		break;
 	}
 	return TRUE;
+}
+
+CMdfPwdDlg::CMdfPwdDlg(CWnd* pParent /*=NULL*/)
+	: CDialogEx(CMdfPwdDlg::IDD, pParent)
+{
+	m_edit_old_pass.m_type = EDIT_TYPE_NO_CHN;
+	m_edit_new_pass.m_type = EDIT_TYPE_NO_CHN;
+	m_edit_new_pass2.m_type = EDIT_TYPE_NO_CHN;
+
+	//设置回调
+	g_Globle.SetCallback(MdfPwdCallback,this);
+}
+
+CMdfPwdDlg::~CMdfPwdDlg()
+{
 }
 
 void CMdfPwdDlg::DoDataExchange(CDataExchange* pDX)

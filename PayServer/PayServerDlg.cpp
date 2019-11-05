@@ -209,6 +209,8 @@ BOOL CPayServerDlg::OnInitDialog()
 		//开始定时刷新客户端列表
 		SetTimer(1,2000,NULL);
 	}
+	else
+		MessageBox(L"找不到配置文件");
 	InitChechBox();
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
@@ -447,7 +449,9 @@ void CPayServerDlg::DoRun(string strData,Json::Value& js,TPkgInfo* pInfo)
 		Json::FastWriter writer;  
 		string temp = writer.write(root);
 
+		int em_dlg = root[CMD_DLG].asInt();
 		EM_SOCK_CMD cmd = (EM_SOCK_CMD)root[CONNECT_CMD].asInt();
+		js[CMD_DLG]=em_dlg;
 		js[CONNECT_CMD]=cmd;
 		switch (cmd)
 		{
@@ -560,6 +564,12 @@ void CPayServerDlg::DoRun(string strData,Json::Value& js,TPkgInfo* pInfo)
 				bRet=theApp.m_dbData->DelBook(strBookID);
 			}
 			break;
+		case SOCK_CMD_PLDEL_BOOK:
+			{
+				string strListID = root[CMD_DELBOOK[EM_DEL_BOOK_ID]].asCString();
+				bRet=theApp.m_dbData->PlDelBook(strListID);
+			}
+			break;
 		case SOCK_CMD_JUDGE_BOOK:
 			{
 				CString strName = A2T(root[CMD_JUDGEBOOK[EM_JUDGE_BOOK_NAME]].asCString());
@@ -591,6 +601,12 @@ void CPayServerDlg::DoRun(string strData,Json::Value& js,TPkgInfo* pInfo)
 					bRet=theApp.m_dbData->AddBook(strBookID, strName,strCbs,strDate,nBc1,nBc2, nSize1,nSize2,nKb, fYz,nYs,nBc,fLs,yzType,zyType,rkType,strMsg);
 				else if(cmd == SOCK_CMD_MDF_BOOK)
 					bRet=theApp.m_dbData->ModifyBook(strBookID, strName,strCbs,strDate,nBc1,nBc2, nSize1,nSize2,nKb, fYz,nYs,nBc,fLs,yzType,zyType,rkType,strMsg);
+			}
+			break;
+		case SOCK_CMD_RK_BOOK:
+			{
+				string strListID = root[CMD_RKBOOK[EM_RK_BOOK_ID]].asCString();
+				bRet=theApp.m_dbData->RkBook(strListID);
 			}
 			break;
 		case SOCK_CMD_GET_PROJECT:
@@ -669,6 +685,12 @@ void CPayServerDlg::DoRun(string strData,Json::Value& js,TPkgInfo* pInfo)
 			{
 				CString strStaffID = A2T(root[CMD_DELSTAFF[EM_DEL_STAFF_ID]].asCString());
 				bRet=theApp.m_dbData->DelStaff(strStaffID);
+			}
+			break;
+		case SOCK_CMD_PLDEL_STAFF:
+			{
+				string strListID = root[CMD_DELSTAFF[EM_DEL_STAFF_ID]].asCString();
+				bRet=theApp.m_dbData->PlDelStaff(strListID);
 			}
 			break;
 		case SOCK_CMD_GET_DPAY:
@@ -887,12 +909,12 @@ void CPayServerDlg::DoRun(string strData,Json::Value& js,TPkgInfo* pInfo)
 							}
 							else if (stu.type == DAYPAY_TYPE_JIJIAN)
 							{
+								stu.strProName = vle[i][DAYPAYMSG[EM_DAYPAY_MSG_PRONAME]].asCString();
+								stu.strBookName = vle[i][DAYPAYMSG[EM_DAYPAY_MSG_BOOKNAME]].asCString();
 								stu.proID = vle[i][DAYPAYMSG[EM_DAYPAY_MSG_PROID]].asInt();
 								stu.strBookID = vle[i][DAYPAYMSG[EM_DAYPAY_MSG_BOOKID]].asCString();
 								stu.pay = vle[i][DAYPAYMSG[EM_DAYPAY_MSG_PAY]].asCString();
-								stu.number = vle[i][DAYPAYMSG[EM_DAYPAY_MSG_NUMBER]].asDouble();
-								stu.strProName = vle[i][DAYPAYMSG[EM_DAYPAY_MSG_PRONAME]].asCString();
-								stu.strBookName = vle[i][DAYPAYMSG[EM_DAYPAY_MSG_BOOKNAME]].asCString();
+								stu.number = vle[i][DAYPAYMSG[EM_DAYPAY_MSG_NUMBER]].asDouble();	
 							}
 							stu.money = vle[i][DAYPAYMSG[EM_DAYPAY_MSG_MONEY]].asCString();
 							vec.push_back(stu);

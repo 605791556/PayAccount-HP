@@ -40,6 +40,7 @@ info_msg::~info_msg()
 		delete[] content;
 }
 
+
 void SetMainWnd(CWnd* pWnd)
 {
 	g_pMainWnd = pWnd;

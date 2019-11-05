@@ -31,7 +31,12 @@ CGloble::CGloble():m_Client(this)
 	m_hExit = CreateEvent(NULL,TRUE,FALSE,NULL); //初始无信号
 	m_LogPath = GetLogFileName();
 	CString workPath = GetWorkDir();
-	m_ConfigFilePath = workPath+L"/config/config.ini";
+	TCHAR szModule[MAX_PATH];
+	GetModuleFileName(NULL, szModule, MAX_PATH);//得到本程序自身的全路径
+	CString strModule = szModule;
+	int nFind = strModule.ReverseFind('\\');
+	CString strWorkDir = strModule.Mid(0,nFind);
+	m_ConfigFilePath = strWorkDir+L"/config/config.ini";
 }
 
 CGloble::~CGloble()
@@ -217,7 +222,7 @@ CString CGloble::ReturnBeginTime(EM_DATE_TYPE type)
 			else
 			{
 				year = nyear;
-				month = nmonth-1;
+				month = nmonth-3;
 			}
 		}
 		break;
@@ -231,7 +236,7 @@ CString CGloble::ReturnBeginTime(EM_DATE_TYPE type)
 			else
 			{
 				year = nyear;
-				month = nmonth-1;
+				month = nmonth-6;
 			}
 		}
 		break;

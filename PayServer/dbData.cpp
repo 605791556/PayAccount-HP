@@ -1,6 +1,9 @@
 #include "stdafx.h"
 #include "dbData.h"
 #include <ctime>
+#include <io.h>
+#include  <stdio.h>
+#include  <stdlib.h>
 #include "..\common\common.h"
 #include "..\common\globle.h"
 
@@ -34,16 +37,27 @@ CString CDbData::GetTimeNow()
 	return str;
 }
 
-bool CDbData::InitSqlite3()
+int CDbData::InitSqlite3(CString& strdbFilePath)
 {
 	USES_CONVERSION;
-	CString strWorkPath = g_Globle.GetWorkDir();
-	CString strdbPathName = strWorkPath+"/db/bkmng.db";
-	if(sqlite3_open(g_Globle.EncodeToUTF8(W2A(strdbPathName)),&m_sqlite) != SQLITE_OK)
+	TCHAR szModule[MAX_PATH];
+	GetModuleFileName(NULL, szModule, MAX_PATH);//µÃµ½±¾³ÌÐò×ÔÉíµÄÈ«Â·¾¶
+	CString strModule = szModule;
+	int nFind = strModule.ReverseFind('\\');
+	CString strWorkDir = strModule.Mid(0,nFind);
+	//CString strWorkPath = g_Globle.GetWorkDir();
+	CString strdbPathName = strWorkDir+"/db/bkmng.db";
+	strdbFilePath = strdbPathName;
+	int iRtn = _access(T2A(strdbPathName), 0);
+	if (iRtn == -1)
 	{
-		return false;
+		return iRtn;
 	}
-	return true;
+	if(sqlite3_open(g_Globle.EncodeToUTF8(T2A(strdbPathName)),&m_sqlite) != SQLITE_OK)
+	{
+		return -2;
+	}
+	return 0;
 }
 
 bool CDbData::_JudgeStaff(CString idcard, Json::Value& root)
@@ -481,13 +495,12 @@ bool CDbData::DelStaff(CString strStaffID)
 	USES_CONVERSION;
 	bool ret=false;
 	char sql[MAX_PATH];
-	char all_sql[1024 * 5] = {0};
 	try
 	{
 		char *errmsg;
 		int result = 0;
 
-		sprintf(sql, "DELETE FROM staff WHERE staff.staffID='%s';",W2A(strStaffID));
+		/*sprintf(sql, "DELETE FROM staff WHERE staff.staffID='%s';",W2A(strStaffID));
 		strcat(all_sql, sql);
 		sprintf(sql, "DELETE FROM work_cal WHERE staffID='%s';",W2A( strStaffID));
 		strcat(all_sql, sql);
@@ -497,13 +510,57 @@ bool CDbData::DelStaff(CString strStaffID)
 		result = sqlite3_exec(m_sqlite, all_sql, NULL, &ret, &errmsg);
 		if (result == SQLITE_OK)
 		{
+		ret = true;
+		}*/
+
+		sprintf(sql, "UPDATE staff SET del='1' WHERE staff.staffID='%s';", W2A(strStaffID));
+		sqlite3_stmt *stmt = NULL;
+		result = sqlite3_prepare_v2(m_sqlite, sql, -1, &stmt, NULL);
+		if (result == SQLITE_OK)
+		{
+			sqlite3_step(stmt);
 			ret = true;
 		}
+		sqlite3_finalize(stmt);
 	}
 	catch (CException* e)
 	{
 		ret=false;
 	}
+	ReleaseMutex(m_hStaff); 
+	return ret;
+}
+
+bool CDbData::PlDelStaff(string strListID)
+{
+	WaitForSingleObject(m_hStaff, INFINITE);
+	bool ret=false;
+	char sql[MAX_PATH];
+	char all_sql[1024 * 5] = {0};
+	char *errmsg;
+	int result = 0;
+
+	try
+	{
+		int nFind = strListID.find(';');
+		while(nFind>0)
+		{
+			string strStaffID = strListID.substr(0,nFind);
+			strListID = strListID.substr(nFind+1);
+			nFind = strListID.find(';');
+
+			sprintf(sql, "UPDATE staff SET del='1' WHERE staff.staffID='%s';", strStaffID.c_str());
+			strcat(all_sql, sql);
+		}
+		result = sqlite3_exec(m_sqlite, all_sql, NULL, &ret, &errmsg);
+		if (result == SQLITE_OK)
+			ret = true;
+	}
+	catch (CException* e)
+	{
+		ret=false;
+	}
+
 	ReleaseMutex(m_hStaff); 
 	return ret;
 }
@@ -518,9 +575,9 @@ bool CDbData::GetStaffs(CString strKeyWord,Json::Value& root,int nstart,int numb
 	{
 		char sql[MAX_PATH];
 		if(strKeyWord.IsEmpty())
-			sprintf(sql,"SELECT COUNT(*) AS num FROM staff");
+			sprintf(sql,"SELECT COUNT(*) AS num FROM staff WHERE del = '0'");
 		else
-			sprintf(sql,"SELECT COUNT(*) AS num FROM staff WHERE staff.name like '%%%s%%'",g_Globle.EncodeToUTF8(W2A(strKeyWord)));
+			sprintf(sql,"SELECT COUNT(*) AS num FROM staff WHERE del = '0' AND staff.name like '%%%s%%'",g_Globle.EncodeToUTF8(W2A(strKeyWord)));
 
 		sqlite3_stmt *stmt = NULL;
 		int result = sqlite3_prepare_v2(m_sqlite, sql, -1, &stmt, NULL);
@@ -542,11 +599,11 @@ bool CDbData::GetStaffs(CString strKeyWord,Json::Value& root,int nstart,int numb
 		char sql[MAX_PATH];
 		if (strKeyWord.IsEmpty())
 		{
-			sprintf(sql,"SELECT* FROM staff ORDER BY sort LIMIT '%d','%d'",nstart,number);
+			sprintf(sql,"SELECT* FROM staff WHERE del = '0' ORDER BY sort LIMIT '%d','%d'",nstart,number);
 		}
 		else
 		{
-			sprintf(sql,"SELECT* FROM staff WHERE staff.name like '%%%s%%' ORDER BY sort LIMIT '%d','%d'",g_Globle.EncodeToUTF8(W2A(strKeyWord)),nstart,number);
+			sprintf(sql,"SELECT* FROM staff WHERE del = '0' AND staff.name like '%%%s%%' ORDER BY sort LIMIT '%d','%d'",g_Globle.EncodeToUTF8(W2A(strKeyWord)),nstart,number);
 		}
 		sqlite3_stmt *stmt = NULL;//Óï¾ä¾ä±ú
 		int result = sqlite3_prepare_v2(m_sqlite, sql, -1, &stmt, NULL);
@@ -591,7 +648,7 @@ bool CDbData::GetSampleStaffs(Json::Value& root)
 	try
 	{
 		char sql[MAX_PATH];
-		sprintf(sql,"SELECT staffID,name,day_pay FROM staff ORDER BY sort");
+		sprintf(sql,"SELECT staffID,name,day_pay FROM staff WHERE del = '0' ORDER BY sort");
 
 		sqlite3_stmt *stmt = NULL;//Óï¾ä¾ä±ú
 		int result = sqlite3_prepare_v2(m_sqlite, sql, -1, &stmt, NULL);
@@ -807,6 +864,74 @@ bool CDbData::ModifyProject(int id,CString strProName,PRO_NUM_TYPE pn_type,PRO_S
 	return ret;
 }
 
+bool CDbData::RkBook(string strListID)
+{
+	WaitForSingleObject(m_hBook, INFINITE);
+	bool ret=false;
+	char sql[MAX_PATH];
+	char all_sql[1024 * 5] = {0};
+	char *errmsg;
+	int result = 0;
+
+	try
+	{
+		int nFind = strListID.find(';');
+		while(nFind>0)
+		{
+			string strBookID = strListID.substr(0,nFind);
+			strListID = strListID.substr(nFind+1);
+			nFind = strListID.find(';');
+
+			sprintf(sql, "UPDATE book SET rk_type='1' WHERE book.bookID='%s';", strBookID.c_str());
+			strcat(all_sql, sql);
+		}
+		result = sqlite3_exec(m_sqlite, all_sql, NULL, &ret, &errmsg);
+		if (result == SQLITE_OK)
+			ret = true;
+	}
+	catch (CException* e)
+	{
+		ret=false;
+	}
+	
+	ReleaseMutex(m_hBook); 
+	return ret;
+}
+
+bool CDbData::PlDelBook(string strListID)
+{
+	WaitForSingleObject(m_hBook, INFINITE);
+	bool ret=false;
+	char sql[MAX_PATH];
+	char all_sql[1024 * 5] = {0};
+	char *errmsg;
+	int result = 0;
+
+	try
+	{
+		int nFind = strListID.find(';');
+		while(nFind>0)
+		{
+			string strBookID = strListID.substr(0,nFind);
+			strListID = strListID.substr(nFind+1);
+			nFind = strListID.find(';');
+
+			sprintf(sql, "UPDATE book SET del='1' WHERE book.bookID='%s';", strBookID.c_str());
+			strcat(all_sql, sql);
+		}
+		result = sqlite3_exec(m_sqlite, all_sql, NULL, &ret, &errmsg);
+		if (result == SQLITE_OK)
+			ret = true;
+	}
+	catch (CException* e)
+	{
+		ret=false;
+	}
+
+	ReleaseMutex(m_hBook); 
+	return ret;
+}
+
 bool CDbData::DelBook(CString strBookID)
 {
 	WaitForSingleObject(m_hBook, INFINITE);
@@ -819,7 +944,7 @@ bool CDbData::DelBook(CString strBookID)
 		char *errmsg;
 		int result = 0;
 
-		sprintf(sql, "DELETE FROM book WHERE book.bookID='%s';", W2A(strBookID));
+		/*sprintf(sql, "DELETE FROM book WHERE book.bookID='%s';", W2A(strBookID));
 		strcat(all_sql, sql);
 		sprintf(sql, "DELETE FROM other_number_pay WHERE bookID='%s';", W2A(strBookID));
 		strcat(all_sql, sql);
@@ -834,7 +959,17 @@ bool CDbData::DelBook(CString strBookID)
 		if (result == SQLITE_OK)
 		{
 			ret = true;
+		}*/
+
+		sprintf(sql, "UPDATE book SET del='1' WHERE book.bookID='%s';", W2A(strBookID));
+		sqlite3_stmt *stmt = NULL;//Óï¾ä¾ä±ú
+		result = sqlite3_prepare_v2(m_sqlite, sql, -1, &stmt, NULL);
+		if (result == SQLITE_OK)
+		{
+			sqlite3_step(stmt);
+			ret = true;
 		}
+		sqlite3_finalize(stmt);
 
 	}
 	catch (CException* e)
@@ -894,17 +1029,17 @@ bool CDbData::GetBooks(Json::Value& root,CString strKeyWord,int rkType,EM_DATE_T
 			if(rkType == BOOK_RK_MAX)
 			{
 				if (dateType != EM_DATE_TYPE_ALL)
-					sprintf(sql,"SELECT COUNT(*) AS num FROM book WHERE xd_date BETWEEN '%s' AND  '%s'",W2A(strTimeBegin),W2A(strTimeNow));
+					sprintf(sql,"SELECT COUNT(*) AS num FROM book WHERE del='0' AND (xd_date BETWEEN '%s' AND  '%s')",W2A(strTimeBegin),W2A(strTimeNow));
 				else
-					sprintf(sql,"SELECT COUNT(*) AS num FROM book");
+					sprintf(sql,"SELECT COUNT(*) AS num FROM book WHERE del='0'");
 
 			}
 			else
 			{
 				if (dateType != EM_DATE_TYPE_ALL)
-					sprintf(sql,"SELECT COUNT(*) AS num FROM book WHERE book.rk_type='%d' AND (xd_date BETWEEN '%s' AND  '%s')",rkType,W2A(strTimeBegin),W2A(strTimeNow));
+					sprintf(sql,"SELECT COUNT(*) AS num FROM book WHERE book.rk_type='%d' AND del='0' AND (xd_date BETWEEN '%s' AND  '%s')",rkType,W2A(strTimeBegin),W2A(strTimeNow));
 				else
-					sprintf(sql,"SELECT COUNT(*) AS num FROM book WHERE book.rk_type='%d'",rkType);
+					sprintf(sql,"SELECT COUNT(*) AS num FROM book WHERE book.rk_type='%d' AND del='0'",rkType);
 			}
 		}
 		else
@@ -912,16 +1047,16 @@ bool CDbData::GetBooks(Json::Value& root,CString strKeyWord,int rkType,EM_DATE_T
 			if(rkType == BOOK_RK_MAX)
 			{
 				if (dateType != EM_DATE_TYPE_ALL)
-					sprintf(sql,"SELECT COUNT(*) AS num FROM book WHERE book.name like '%%%s%%' AND (xd_date BETWEEN '%s' AND  '%s')",g_Globle.EncodeToUTF8(W2A(strKeyWord)),W2A(strTimeBegin),W2A(strTimeNow));
+					sprintf(sql,"SELECT COUNT(*) AS num FROM book WHERE book.name like '%%%s%%' AND del='0' AND (xd_date BETWEEN '%s' AND  '%s')",g_Globle.EncodeToUTF8(W2A(strKeyWord)),W2A(strTimeBegin),W2A(strTimeNow));
 				else
-					sprintf(sql,"SELECT COUNT(*) AS num FROM book WHERE book.name like '%%%s%%'",g_Globle.EncodeToUTF8(W2A(strKeyWord)));
+					sprintf(sql,"SELECT COUNT(*) AS num FROM book WHERE book.name like '%%%s%%'  AND del='0'",g_Globle.EncodeToUTF8(W2A(strKeyWord)));
 			}
 			else
 			{
 				if (dateType != EM_DATE_TYPE_ALL)
-					sprintf(sql,"SELECT COUNT(*) AS num FROM book WHERE book.rk_type='%d' AND book.name like '%%%s%%' AND (xd_date BETWEEN '%s' AND  '%s')",rkType,g_Globle.EncodeToUTF8(W2A(strKeyWord)),rkType,W2A(strTimeBegin),W2A(strTimeNow));
+					sprintf(sql,"SELECT COUNT(*) AS num FROM book WHERE book.rk_type='%d' AND del='0' AND book.name like '%%%s%%' AND (xd_date BETWEEN '%s' AND  '%s')",rkType,g_Globle.EncodeToUTF8(W2A(strKeyWord)),rkType,W2A(strTimeBegin),W2A(strTimeNow));
 				else
-					sprintf(sql,"SELECT COUNT(*) AS num FROM book WHERE book.rk_type='%d' AND book.name like '%%%s%%'",rkType,g_Globle.EncodeToUTF8(W2A(strKeyWord)));
+					sprintf(sql,"SELECT COUNT(*) AS num FROM book WHERE book.rk_type='%d' AND del='0' AND book.name like '%%%s%%'",rkType,g_Globle.EncodeToUTF8(W2A(strKeyWord)));
 			}
 		}
 		sqlite3_stmt *stmt = NULL;
@@ -947,16 +1082,16 @@ bool CDbData::GetBooks(Json::Value& root,CString strKeyWord,int rkType,EM_DATE_T
 			if(rkType == BOOK_RK_MAX)
 			{
 				if (dateType == EM_DATE_TYPE_ALL)
-				    sprintf(sql,"SELECT* FROM book ORDER BY xd_date ASC LIMIT '%d','%d'",nStart,nNum);
+				    sprintf(sql,"SELECT* FROM book WHERE del='0' ORDER BY xd_date ASC LIMIT '%d','%d'",nStart,nNum);
 				else
-					sprintf(sql,"SELECT* FROM book WHERE xd_date BETWEEN '%s' AND  '%s' ORDER BY xd_date ASC LIMIT '%d','%d'",W2A(strTimeBegin),W2A(strTimeNow),nStart,nNum);
+					sprintf(sql,"SELECT* FROM book WHERE del='0' AND (xd_date BETWEEN '%s' AND  '%s') ORDER BY xd_date ASC LIMIT '%d','%d'",W2A(strTimeBegin),W2A(strTimeNow),nStart,nNum);
 			}
 			else
 			{
 				if (dateType == EM_DATE_TYPE_ALL)
-				    sprintf(sql,"SELECT* FROM book WHERE book.rk_type='%d' ORDER BY xd_date ASC LIMIT '%d','%d'",rkType,nStart,nNum);
+				    sprintf(sql,"SELECT* FROM book WHERE book.rk_type='%d' AND del='0' ORDER BY xd_date ASC LIMIT '%d','%d'",rkType,nStart,nNum);
 				else
-					sprintf(sql,"SELECT* FROM book WHERE book.rk_type='%d' AND (xd_date BETWEEN '%s' AND  '%s') ORDER BY xd_date ASC LIMIT '%d','%d'",rkType,W2A(strTimeBegin),W2A(strTimeNow),nStart,nNum);
+					sprintf(sql,"SELECT* FROM book WHERE book.rk_type='%d' AND del='0' AND (xd_date BETWEEN '%s' AND  '%s') ORDER BY xd_date ASC LIMIT '%d','%d'",rkType,W2A(strTimeBegin),W2A(strTimeNow),nStart,nNum);
 			}
 		}
 		else
@@ -964,16 +1099,16 @@ bool CDbData::GetBooks(Json::Value& root,CString strKeyWord,int rkType,EM_DATE_T
 			if(rkType == BOOK_RK_MAX)
 			{
 				if (dateType == EM_DATE_TYPE_ALL)
-					sprintf(sql,"SELECT* FROM book WHERE book.name like '%%%s%%' ORDER BY xd_date ASC LIMIT '%d','%d'",g_Globle.EncodeToUTF8(W2A(strKeyWord)),nStart,nNum);
+					sprintf(sql,"SELECT* FROM book WHERE book.name like '%%%s%%' AND del='0' ORDER BY xd_date ASC LIMIT '%d','%d'",g_Globle.EncodeToUTF8(W2A(strKeyWord)),nStart,nNum);
 				else
-					sprintf(sql,"SELECT* FROM book WHERE book.name like '%%%s%%' AND (xd_date BETWEEN '%s' AND  '%s') ORDER BY xd_date ASC LIMIT '%d','%d'",g_Globle.EncodeToUTF8(W2A(strKeyWord)),W2A(strTimeBegin),W2A(strTimeNow),nStart,nNum);
+					sprintf(sql,"SELECT* FROM book WHERE book.name like '%%%s%%' AND del='0' AND (xd_date BETWEEN '%s' AND  '%s') ORDER BY xd_date ASC LIMIT '%d','%d'",g_Globle.EncodeToUTF8(W2A(strKeyWord)),W2A(strTimeBegin),W2A(strTimeNow),nStart,nNum);
 			}
 			else
 			{
 				if (dateType == EM_DATE_TYPE_ALL)
-				    sprintf(sql,"SELECT* FROM book WHERE book.rk_type='%d' AND book.name like '%%%s%%' ORDER BY xd_date ASC LIMIT '%d','%d'",rkType,g_Globle.EncodeToUTF8(W2A(strKeyWord)),nStart,nNum);
+				    sprintf(sql,"SELECT* FROM book WHERE book.rk_type='%d' AND del='0' AND book.name like '%%%s%%' ORDER BY xd_date ASC LIMIT '%d','%d'",rkType,g_Globle.EncodeToUTF8(W2A(strKeyWord)),nStart,nNum);
 				else
-					sprintf(sql,"SELECT* FROM book WHERE book.rk_type='%d' AND book.name like '%%%s%%' AND (xd_date BETWEEN '%s' AND  '%s') ORDER BY xd_date ASC LIMIT '%d','%d'",rkType,g_Globle.EncodeToUTF8(W2A(strKeyWord)),W2A(strTimeBegin),W2A(strTimeNow),nStart,nNum);
+					sprintf(sql,"SELECT* FROM book WHERE book.rk_type='%d' AND del='0' AND book.name like '%%%s%%' AND (xd_date BETWEEN '%s' AND  '%s') ORDER BY xd_date ASC LIMIT '%d','%d'",rkType,g_Globle.EncodeToUTF8(W2A(strKeyWord)),W2A(strTimeBegin),W2A(strTimeNow),nStart,nNum);
 			}
 
 		}
@@ -1035,9 +1170,9 @@ bool CDbData::GetSampleBooks(Json::Value& root,BOOK_RK rkType)
 	{
 		char sql[MAX_PATH];
 		if(rkType == BOOK_RK_MAX)
-			sprintf(sql,"SELECT bookID,name FROM book ORDER BY xd_date ASC ");
+			sprintf(sql,"SELECT bookID,name FROM book WHERE del='0' ORDER BY xd_date ASC ");
 		else
-			sprintf(sql,"SELECT bookID,name FROM book WHERE book.rk_type='%d' ORDER BY xd_date ASC ",rkType);
+			sprintf(sql,"SELECT bookID,name FROM book WHERE book.rk_type='%d' AND del='0' ORDER BY xd_date ASC ",rkType);
 
 		sqlite3_stmt *stmt = NULL;//Óï¾ä¾ä±ú
 		int result = sqlite3_prepare_v2(m_sqlite, sql, -1, &stmt, NULL);

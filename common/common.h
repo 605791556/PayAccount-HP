@@ -2,6 +2,7 @@
 
 #define CMD_CHAR_MAX 256
 #define CONNECT_CMD "cmd"
+#define CMD_DLG     "dlg"
 
 //返回结果
 enum EM_CMD_RET
@@ -40,6 +41,7 @@ enum EM_SOCK_CMD
 	SOCK_CMD_GET_STAFF,//获取职工
 	SOCK_CMD_GET_SAMPLE_STAFF,//只获取职工ID和姓名
 	SOCK_CMD_DEL_STAFF,//删除职工
+	SOCK_CMD_PLDEL_STAFF,//批量删除职工
 	SOCK_CMD_ADD_STAFF,//添加职工
 	SOCK_CMD_MDF_STAFF,//修改职工
 	SOCK_CMD_JUDGE_STAFF,//判断职工是否存在
@@ -49,6 +51,8 @@ enum EM_SOCK_CMD
 	SOCK_CMD_DEL_BOOK,//删除书本
 	SOCK_CMD_ADD_BOOK,//添加书本
 	SOCK_CMD_MDF_BOOK,//修改书本
+	SOCK_CMD_RK_BOOK,//批量入库书本
+	SOCK_CMD_PLDEL_BOOK,//批量删除书本
 	SOCK_CMD_JUDGE_BOOK,//判断书本是否存在
 	SOCK_CMD_GET_PROJECT,//获取项目信息
 	SOCK_CMD_DEL_PROJECT,//删除项目
@@ -129,6 +133,14 @@ enum EM_DEL_BOOK
 	EM_DEL_BOOK_MAX
 };
 extern const char CMD_DELBOOK[EM_DEL_BOOK_MAX][CMD_CHAR_MAX];
+
+//批量入库书本
+enum EM_RK_BOOK
+{
+	EM_RK_BOOK_ID,
+	EM_RK_BOOK_MAX
+};
+extern const char CMD_RKBOOK[EM_RK_BOOK_MAX][CMD_CHAR_MAX];
 
 //判断图书是否存在
 enum EM_JUDGE_BOOK

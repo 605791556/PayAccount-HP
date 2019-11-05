@@ -67,18 +67,29 @@ BOOL CPayServerApp::InitInstance()
 	// 例如修改为公司或组织名
 	SetRegistryKey(_T("定制管理系统"));
 
-	HANDLE hMutex=::CreateMutex(NULL,TRUE,L"PayServer2-HP");//第三个参数FirstName这个名称可以任意取，第二个参数要为TRUE表示当前实例占用此互斥对象
+	HANDLE hMutex=::CreateMutex(NULL,TRUE,L"PayServer-QT_TS");//第三个参数FirstName这个名称可以任意取，第二个参数要为TRUE表示当前实例占用此互斥对象
 	if (hMutex!=NULL)
 	{
 		if (GetLastError()==ERROR_ALREADY_EXISTS)
 		{
+			CloseHandle(hMutex);
+			hMutex = NULL;
 			MessageBox(NULL,L"已经有一个服务在运行,如要重新运行，请先关闭服务！",L"提示",MB_OK);
 			return 0;
 		}
 	}
 
+	CString strDbFilePath;
 	m_dbData = new CDbData();
-	if(!m_dbData->InitSqlite3())
+	int nRet = m_dbData->InitSqlite3(strDbFilePath);
+	if(nRet == -1)
+	{
+		CString str;
+		str.Format(L"db file: %s not exist !",strDbFilePath);
+		MessageBox(NULL,str, L"error",NULL);
+		return FALSE;
+	}
+	else if(nRet == -2)
 	{
 		MessageBox(NULL, L"InitSqlite3 error!", L"error",NULL);
 		return FALSE;

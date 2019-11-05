@@ -15,7 +15,7 @@ public:
 	HANDLE m_hBook;
 	HANDLE m_hStaff;
 public:
-	bool InitSqlite3();
+	int InitSqlite3(CString& strdbFilePath);
 	//初始化数据库
 	bool InitData();
 	//获取当前时间
@@ -25,6 +25,8 @@ public:
 	bool AddStaff(CString strName,CString strSex,int age,CString strStaffID, CString idcard,CString strTel,int type,int sort,double fDaypay);
 	bool ModifyStaff(CString strName,CString strSex,int age,CString strStaffID,CString idcard,CString strTel,int type,int sort,double fDaypay);
 	bool DelStaff(CString strStaffID);
+	//批量删除
+	bool PlDelStaff(string strListID);
 	bool _JudgeStaff(CString idcard, Json::Value& root);
 	bool GetStaffs(CString strKeyWord,Json::Value& root,int nstart = 0,int number = 20);
 	bool GetSampleStaffs(Json::Value& root);
@@ -35,7 +37,9 @@ public:
 	//图书
 	bool AddBook(CString strID, CString strName,CString strCbs,CString strDate,int nBc1,int nBc2, int nSize1,int nSize2,int nKb, double yz,int ys,int bc,double ls,int yzType,int zyType,int rkType,CString strMsg);
 	bool DelBook(CString strBookID);
+	bool PlDelBook(string strListID);
 	bool ModifyBook(CString strID, CString strName,CString strCbs,CString strDate,int nBc1,int nBc2, int nSize1,int nSize2,int nKb, double yz,int ys,int bc,double ls,int yzType,int zyType,int rkType,CString strMsg);
+	bool RkBook(string strListID);
 	bool GetBooks(Json::Value& root,CString strKeyWord,int rkType,EM_DATE_TYPE dateType,int nStart = 0,int nNum = 20);
 	bool GetSampleBooks(Json::Value& root,BOOK_RK rkType);
 	bool _JudgeBook(CString strName, Json::Value& root);
