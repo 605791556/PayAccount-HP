@@ -282,7 +282,9 @@ const char DAYPAYMSG[EM_DAYPAY_MSG_MAX][CMD_CHAR_MAX]=
 	"money",
 	"payday",
 	"days",
-	"del_msg"
+	"del_msg",
+	"bztype",
+	"bzmsg"
 };
 
 const char MPAYMSG[EM_GET_MPAY_MAX][CMD_CHAR_MAX]=
@@ -317,4 +319,17 @@ const char GETPAYMSG[EM_GET_PAY_MAX][CMD_CHAR_MAX]=
 	"bookid",
 	"pay",
 	"nitem"
+};
+
+const char CHART_YEAR[EM_GET_CHART_YEAR_MAX][CMD_CHAR_MAX]=
+{
+	"year",
+	"value"
+};
+
+const char CHART_MONTH[EM_GET_CHART_MONTH_MAX][CMD_CHAR_MAX]=
+{
+	"year",
+	"month",
+	"value"
 };

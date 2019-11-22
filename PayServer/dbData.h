@@ -27,7 +27,7 @@ public:
 	bool DelStaff(CString strStaffID);
 	//批量删除
 	bool PlDelStaff(string strListID);
-	bool _JudgeStaff(CString idcard, Json::Value& root);
+	bool _JudgeStaff(CString strStaffName, Json::Value& root);
 	bool GetStaffs(CString strKeyWord,Json::Value& root,int nstart = 0,int number = 20);
 	bool GetSampleStaffs(Json::Value& root);
 	bool GetDPay(CString strStaffID,Json::Value& root);
@@ -67,7 +67,6 @@ public:
 	//修改
 	bool ModifyProject(int id,CString strProName,PRO_NUM_TYPE pn_type,PRO_STAFF_TYPE ps_type);
 	//删除项目
-	bool DelProject(CString strIDs);
 	bool DelOneProject(int id);
 	//保存项目排列顺序
 	bool SaveProNdex(Json::Value root);
@@ -109,6 +108,13 @@ public:
 	//月核算
 	bool _GetMouthPay(Json::Value& js,Json::Value root,DWORD& time);
 	bool _GetMouthPay2(Json::Value& js,Json::Value root,DWORD& time);
+	
+	//图表
+	//获取近五年中每年总支出
+	bool GetChartYear(Json::Value& js);
+	//获取指定年份中每月支出
+	bool GetChartMonth(Json::Value& js,CString strYear);
+
 	//明细
 	bool _GetDetails(Json::Value& root,vector<PROJECT_STU> vProIDs,CString strBookID);
 	//进度

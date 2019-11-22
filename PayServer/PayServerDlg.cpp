@@ -701,8 +701,8 @@ void CPayServerDlg::DoRun(string strData,Json::Value& js,TPkgInfo* pInfo)
 			break;
 		case SOCK_CMD_JUDGE_STAFF:
 			{
-				CString strIdcard = A2T(root[CMD_JUDGESTAFF[EM_JUDGE_STAFF_IDCARD]].asCString());
-				bRet=theApp.m_dbData->_JudgeStaff(strIdcard,js);
+				CString strStaffName = A2T(root[CMD_JUDGESTAFF[EM_JUDGE_STAFF_IDCARD]].asCString());
+				bRet=theApp.m_dbData->_JudgeStaff(strStaffName,js);
 			}
 			break;
 		case SOCK_CMD_ADD_STAFF:
@@ -902,6 +902,11 @@ void CPayServerDlg::DoRun(string strData,Json::Value& js,TPkgInfo* pInfo)
 							{
 								stu.strMsg = vle[i][DAYPAYMSG[EM_DAYPAY_MSG_DELMSG]].asCString();
 							}
+							else if (stu.type == DAYPAY_TYPE_BZ)//补助
+							{
+								stu.em_bzType = (BZ_TYPE)vle[i][DAYPAYMSG[EM_DAYPAY_MSG_BZTYPE]].asInt();
+								stu.strMsg = vle[i][DAYPAYMSG[EM_DAYPAY_MSG_BZMSG]].asCString();
+							}
 							else if (stu.type == DAYPAY_TYPE_DAY)
 							{
 								stu.strPayDay = vle[i][DAYPAYMSG[EM_DAYPAY_MSG_PAYDAY]].asCString();
@@ -934,6 +939,18 @@ void CPayServerDlg::DoRun(string strData,Json::Value& js,TPkgInfo* pInfo)
 				nItem = root[GETPAYMSG[EM_GET_PAY_NITEM]].asInt();
 				bRet=theApp.m_dbData->_GetOnePay(js,strStaffID,nProID,strBookID);
 				js[GETPAYMSG[EM_GET_PAY_NITEM]] = nItem;
+			}
+			break;
+		case SOCK_CMD_GET_CHART_YEAR://年图表
+			{
+				bRet = theApp.m_dbData->GetChartYear(js);
+			}
+			break;
+		case SOCK_CMD_GET_CHART_MONTH://月图表
+			{
+				CString strYear;
+				strYear = root[CHART_MONTH[EM_GET_CHART_MONTH_YEAR]].asCString();
+				bRet = theApp.m_dbData->GetChartMonth(js,strYear);
 			}
 			break;
 		default:

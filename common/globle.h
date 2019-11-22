@@ -134,15 +134,23 @@ enum STAFF_TYPE
 };
 extern CString StaffType[];
 
+//补助类型
+enum BZ_TYPE
+{
+	BZ_TYPE_BZ,//补助
+	BZ_TYPE_CCBZ,//出车补助
+	BZ_TYPE_OTHER,//其它
+	BZ_TYPE_MAX
+};
+
 enum DAYPAY_TYPE
 {
 	DAYPAY_TYPE_DAY,//按天
 	DAYPAY_TYPE_JIJIAN,//计件
 	DAYPAY_TYPE_DEL,//扣除
+	DAYPAY_TYPE_BZ,//补助
 	DAYPAY_TYPE_MAX
 };
-
-
 
 //明细
 struct STU_DETAIL
@@ -179,8 +187,10 @@ struct DAYPAY
 	CString strPayDay;
 	CString strDays;
 
+	BZ_TYPE em_bzType;
 	DAYPAY()
 	{
+		em_bzType = BZ_TYPE_MAX;
 		type = DAYPAY_TYPE_MAX;
 		number = 0;
 	}
